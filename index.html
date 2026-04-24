@@ -68,7 +68,7 @@
   .badge-orange{background:#fff7ed;color:#c2410c;}
   .badge-teal{background:#f0fdfa;color:#0f766e;}
 
-  .actionBtns{display:flex;gap:5px;flex-wrap:nowrap;}
+  .actionBtns{display:flex;gap:5px;flex-wrap:nowrap;align-items:center;}
   .iconBtn{padding:5px 9px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap;font-weight:500;}
   .iconBtn.map{border-color:#a7f3d0;color:var(--accent2);background:var(--accent2-light);}
   .iconBtn.map:hover{background:#d1fae5;}
@@ -84,7 +84,7 @@
   .iconBtn.detail:hover{background:#e2e8f0;}
 
   .linkedTag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:var(--purple-light);border:1px solid #ddd6fe;border-radius:12px;font-size:11px;color:var(--purple);font-weight:600;}
-  .visibleTag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;font-size:11px;color:#065f46;font-weight:600;}
+  .visibleTag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;font-size:11px;color:#065f46;font-weight:600;white-space:normal;margin-bottom:2px;}
   .hiddenTag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:12px;font-size:11px;color:#475569;font-weight:600;}
 
   /* MODAL */
@@ -823,7 +823,7 @@ function renderLand(){
       <td style="color:var(--text2);font-size:12px">${l.owner||'―'}</td>
       <td>${badge(l.status,landStatusMap)}</td>
       <td>${getLinkedPowers(l).map(p=>`<span class="linkedTag clickableTag" onclick="event.stopPropagation();jumpToPower('${p.id}')">⚡ ${p.name}</span>`).join(' ')||`<span style="color:var(--text3)">―</span>`}</td>
-      <td>${isAdmin?visibleToHtml(l.visibleTo):'―'}</td>
+      <td style="white-space:normal;min-width:100px">${isAdmin?visibleToHtml(l.visibleTo):'―'}</td>
       <td onclick="event.stopPropagation()"><div class="actionBtns">
         ${(l.coordinates||l.address)?`<button class="iconBtn map" onclick="openMap('${l.coordinates||''}','${l.address||''}')">🗺</button>`:''}
         ${l.dropbox?`<button class="iconBtn dropbox" onclick="window.open('${l.dropbox}','_blank')">📁</button>`:''}
