@@ -881,20 +881,22 @@ function renderLand(){
     ${hasLinked?`<tr class="accordionPanel" id="lacc_${l.id}" style="display:none"><td colspan="9" style="padding:0 0 8px 24px;background:#f8faff;">
       <table class="miniTable">
         <thead><tr>
-          <th>⚡ 物件名</th><th>事業者</th><th>電源</th><th>電圧</th><th>ステータス</th><th>資料</th><th>編集</th>
+          <th>⚡ 物件名</th><th>事業者</th><th>電源</th><th>電圧</th><th>容量</th><th>回答日</th><th>ステータス</th><th>資料</th>${isAdmin?'<th>編集</th>':''}
         </tr></thead>
         <tbody>
           ${linkedPowers.map(p=>`<tr>
-            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${p.name||'―'}</td>
-            <td style="color:var(--text2)">${p.businessName||'―'}</td>
+            <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${p.name||'―'}</td>
+            <td style="color:var(--text2);font-size:11px">${p.businessName||'―'}</td>
             <td>${p.sourceType?badge(p.sourceType,sourceTypeMap):'―'}</td>
             <td><span class="badge ${getVoltageClass(p.voltage)}" style="font-size:10px">${p.voltage||'―'}</span></td>
+            <td style="font-size:11px">${fmtCapacity(p)}</td>
+            <td style="font-size:11px;color:var(--text2)">${fmtDate(p.ansdate)}</td>
             <td>${badge(p.status,powerStatusMap)}</td>
             <td><div class="miniShryoCol">
               ${(p.coordinates||p.address)?`<button class="miniShryoBtn map" onclick="openMap('${p.coordinates||''}','${p.address||''}')">🗺</button>`:`<button class="miniShryoBtn empty">🗺</button>`}
               ${p.dropbox?`<button class="miniShryoBtn dropbox" onclick="window.open('${p.dropbox}','_blank')">📁</button>`:`<button class="miniShryoBtn empty">📁</button>`}
             </div></td>
-            <td><button class="miniEditBtn" onclick="event.stopPropagation();openPowerModal('${p.id}')">✏️ 編集</button></td>
+            ${isAdmin?`<td><button class="miniEditBtn" onclick="event.stopPropagation();openPowerModal('${p.id}')">✏️ 編集</button></td>`:''}
           </tr>`).join('')}
         </tbody>
       </table>
@@ -1056,7 +1058,7 @@ function renderPower(){
     ${hasLinked?`<tr class="accordionPanel" id="pacc_${p.id}" style="display:none"><td colspan="11" style="padding:0 0 8px 24px;background:#f8faff;">
       <table class="miniTable">
         <thead><tr>
-          <th>🌍 所在地・地番</th><th>面積</th><th>地目</th><th>地主・仲介</th><th>ステータス</th><th>資料</th><th>編集</th>
+          <th>🌍 所在地・地番</th><th>面積</th><th>地目</th><th>地主・仲介</th><th>ステータス</th><th>資料</th>${isAdmin?'<th>編集</th>':''}
         </tr></thead>
         <tbody>
           ${linkedLands.map(l=>`<tr>
@@ -1069,7 +1071,7 @@ function renderPower(){
               ${(l.coordinates||l.address)?`<button class="miniShryoBtn map" onclick="openMap('${l.coordinates||''}','${l.address||''}')">🗺</button>`:`<button class="miniShryoBtn empty">🗺</button>`}
               ${l.dropbox?`<button class="miniShryoBtn dropbox" onclick="window.open('${l.dropbox}','_blank')">📁</button>`:`<button class="miniShryoBtn empty">📁</button>`}
             </div></td>
-            <td><button class="miniEditBtn" onclick="event.stopPropagation();openLandModal('${l.id}')">✏️ 編集</button></td>
+            ${isAdmin?`<td><button class="miniEditBtn" onclick="event.stopPropagation();openLandModal('${l.id}')">✏️ 編集</button></td>`:''}
           </tr>`).join('')}
         </tbody>
       </table>
