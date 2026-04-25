@@ -69,6 +69,22 @@
   .badge-teal{background:#f0fdfa;color:#0f766e;}
 
   .actionBtns{display:flex;gap:5px;flex-wrap:nowrap;align-items:center;}
+
+  /* 資料列 */
+  .shryoCol{display:flex;gap:4px;align-items:center;}
+  .shryoBtn{width:30px;height:28px;border-radius:7px;border:1.5px solid transparent;background:transparent;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0;}
+  .shryoBtn.map{border-color:#a7f3d0;color:var(--accent2);background:var(--accent2-light);}
+  .shryoBtn.map:hover{background:#d1fae5;}
+  .shryoBtn.dropbox{border-color:#bfdbfe;color:var(--accent);background:var(--accent-light);}
+  .shryoBtn.dropbox:hover{background:#dbeafe;}
+  .shryoBtn.detail{border-color:var(--border);color:var(--text2);background:var(--surface2);font-size:11px;width:36px;}
+  .shryoBtn.detail:hover{background:#e2e8f0;}
+  .shryoBtn.empty{border-color:transparent;background:transparent;cursor:default;pointer-events:none;opacity:0;}
+
+  /* 公開状況コンパクト */
+  .visibleCount{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;font-size:12px;color:#065f46;font-weight:600;cursor:pointer;white-space:nowrap;}
+  .visibleCount:hover{background:#d1fae5;}
+  .hiddenCount{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:#f1f5f9;border:1px solid var(--border);border-radius:12px;font-size:12px;color:#475569;font-weight:600;white-space:nowrap;}
   .iconBtn{padding:5px 9px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap;font-weight:500;}
   .iconBtn.map{border-color:#a7f3d0;color:var(--accent2);background:var(--accent2-light);}
   .iconBtn.map:hover{background:#d1fae5;}
@@ -269,7 +285,7 @@
       <div class="tableWrap">
         <table>
           <thead><tr>
-            <th class="sortable" onclick="sortLand('address')">所在地・地番 <span id="lsort_address"></span></th><th class="sortable" onclick="sortLand('area')">面積 <span id="lsort_area"></span></th><th>地目</th><th>地主・仲介</th><th class="sortable" onclick="sortLand('status')">ステータス <span id="lsort_status"></span></th><th>電力申請</th><th class="sortable" onclick="sortLand('visibleTo')">公開状況 <span id="lsort_visibleTo"></span></th><th>操作</th>
+            <th class="sortable" onclick="sortLand('address')">所在地・地番 <span id="lsort_address"></span></th><th class="sortable" onclick="sortLand('area')">面積 <span id="lsort_area"></span></th><th>地目</th><th>地主・仲介</th><th class="sortable" onclick="sortLand('status')">ステータス <span id="lsort_status"></span></th><th>電力申請</th><th class="sortable" onclick="sortLand('visibleTo')">公開状況 <span id="lsort_visibleTo"></span></th><th>資料</th><th>操作</th>
           </tr></thead>
           <tbody id="landBody"></tbody>
         </table>
@@ -344,7 +360,7 @@
       <div class="tableWrap">
         <table>
           <thead><tr>
-            <th class="sortable" onclick="sortPower('name')">物件名 <span id="psort_name"></span></th><th class="sortable" onclick="sortPower('businessName')">事業者名 <span id="psort_businessName"></span></th><th class="sortable" onclick="sortPower('sourceType')">電源種別 <span id="psort_sourceType"></span></th><th class="sortable" onclick="sortPower('voltage')">電力会社・電圧 <span id="psort_voltage"></span></th><th>容量</th><th class="sortable" onclick="sortPower('ansdate')">回答日 <span id="psort_ansdate"></span></th><th class="sortable" onclick="sortPower('status')">ステータス <span id="psort_status"></span></th><th class="sortable" onclick="sortPower('visibleTo')">公開状況 <span id="psort_visibleTo"></span></th><th>操作</th>
+            <th class="sortable" onclick="sortPower('name')">物件名 <span id="psort_name"></span></th><th class="sortable" onclick="sortPower('businessName')">事業者名 <span id="psort_businessName"></span></th><th class="sortable" onclick="sortPower('sourceType')">電源種別 <span id="psort_sourceType"></span></th><th class="sortable" onclick="sortPower('voltage')">電力会社・電圧 <span id="psort_voltage"></span></th><th>容量</th><th class="sortable" onclick="sortPower('ansdate')">回答日 <span id="psort_ansdate"></span></th><th class="sortable" onclick="sortPower('status')">ステータス <span id="psort_status"></span></th><th class="sortable" onclick="sortPower('visibleTo')">公開状況 <span id="psort_visibleTo"></span></th><th>資料</th><th>操作</th>
           </tr></thead>
           <tbody id="powerBody"></tbody>
         </table>
@@ -700,12 +716,12 @@ function openMap(coords, address){
   if(address) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`,'_blank');
 }
 
-function visibleToHtml(v){
-  if(!v||v.trim()==='') return `<span class="hiddenTag">🔒 非公開</span>`;
+function visibleToHtml(v, showDetail=false){
+  if(!v||v.trim()==='') return `<span class="hiddenCount">🔒 非公開</span>`;
   const clients=v.split(',').map(c=>c.trim()).filter(c=>c&&c.toLowerCase()!=='blade');
-  if(!clients.length) return `<span class="hiddenTag">🔒 非公開</span>`;
-  return clients.map(c=>`<span class="visibleTag">👁 ${c}</span>`).join(' ')
-    +`<span style="font-size:10px;color:var(--accent2);margin-left:4px;">(${clients.length}社)</span>`;
+  if(!clients.length) return `<span class="hiddenCount">🔒 非公開</span>`;
+  if(showDetail) return clients.map(c=>`<span class="visibleTag">👁 ${c}</span>`).join(' ');
+  return `<span class="visibleCount">👁 ${clients.length}社</span>`;
 }
 
 function visibleCount(v){
@@ -807,7 +823,7 @@ function renderLand(){
 
   const isAdmin=currentRole==='admin';
   const tbody=document.getElementById('landBody');
-  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="8"><div class="emptyState"><div class="emptyIcon">🌍</div><p>該当する土地情報がありません</p></div></td></tr>`;return;}
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="9"><div class="emptyState"><div class="emptyIcon">🌍</div><p>該当する土地情報がありません</p></div></td></tr>`;return;}
 
   const rows=filtered.map(l=>{
     const linkedPowers=getLinkedPowers(l);
@@ -823,15 +839,17 @@ function renderLand(){
       <td style="color:var(--text2);font-size:12px">${l.owner||'―'}</td>
       <td>${badge(l.status,landStatusMap)}</td>
       <td>${getLinkedPowers(l).map(p=>`<span class="linkedTag clickableTag" onclick="event.stopPropagation();jumpToPower('${p.id}')">⚡ ${p.name}</span>`).join(' ')||`<span style="color:var(--text3)">―</span>`}</td>
-      <td style="white-space:normal;min-width:100px">${isAdmin?visibleToHtml(l.visibleTo):'―'}</td>
-      <td onclick="event.stopPropagation()"><div class="actionBtns">
-        ${(l.coordinates||l.address)?`<button class="iconBtn map" onclick="openMap('${l.coordinates||''}','${l.address||''}')">🗺</button>`:''}
-        ${l.dropbox?`<button class="iconBtn dropbox" onclick="window.open('${l.dropbox}','_blank')">📁</button>`:''}
-        <button class="iconBtn detail" onclick="openLandDetail('${l.id}')">詳細</button>
-        ${isAdmin?`<div class="menuWrap"><button class="menuBtn" onclick="toggleMenu('${menuId}')">⋯</button><div class="menuDropdown" id="${menuId}"><button class="menuItem" onclick="closeAllMenus();openLandModal('${l.id}')">✏️ 編集</button><button class="menuItem" onclick="closeAllMenus();openShareModalById('land','${l.id}')">🔐 公開設定</button><button class="menuItem danger" onclick="closeAllMenus();deleteLand('${l.id}')">🗑 削除</button></div></div>`:''}
+      <td style="white-space:nowrap">${isAdmin?visibleToHtml(l.visibleTo):'―'}</td>
+      <td onclick="event.stopPropagation()"><div class="shryoCol">
+        ${(l.coordinates||l.address)?`<button class="shryoBtn map" onclick="openMap('${l.coordinates||''}','${l.address||''}')">🗺</button>`:`<button class="shryoBtn empty">🗺</button>`}
+        ${l.dropbox?`<button class="shryoBtn dropbox" onclick="window.open('${l.dropbox}','_blank')">📁</button>`:`<button class="shryoBtn empty">📁</button>`}
+        <button class="shryoBtn detail" onclick="openLandDetail('${l.id}')">詳細</button>
       </div></td>
+      <td onclick="event.stopPropagation()">
+        ${isAdmin?`<div class="menuWrap"><button class="menuBtn" onclick="toggleMenu('${menuId}')">⋯</button><div class="menuDropdown" id="${menuId}"><button class="menuItem" onclick="closeAllMenus();openLandModal('${l.id}')">✏️ 編集</button><button class="menuItem" onclick="closeAllMenus();openShareModalById('land','${l.id}')">🔐 公開設定</button><button class="menuItem danger" onclick="closeAllMenus();deleteLand('${l.id}')">🗑 削除</button></div></div>`:'―'}
+      </td>
     </tr>
-    ${hasLinked?`<tr class="accordionPanel" id="lacc_${l.id}" style="display:none"><td colspan="8"><div class="accordionContent"><span class="accordionLabel">⚡ 紐付き電力申請</span>${linkedPowers.map(p=>`<span class="accordionTag power" onclick="jumpToPower('${p.id}')">⚡ ${p.name} ${badge(p.status,powerStatusMap)}</span>`).join('')}</div></td></tr>`:''}`;
+    ${hasLinked?`<tr class="accordionPanel" id="lacc_${l.id}" style="display:none"><td colspan="9"><div class="accordionContent"><span class="accordionLabel">⚡ 紐付き電力申請</span>${linkedPowers.map(p=>`<span class="accordionTag power" onclick="jumpToPower('${p.id}')">⚡ ${p.name} ${badge(p.status,powerStatusMap)}</span>`).join('')}</div></td></tr>`:''}`;
   });
   tbody.innerHTML=rows.join('');
 }
@@ -942,7 +960,7 @@ function renderPower(){
 
   const isAdmin=currentRole==='admin';
   const tbody=document.getElementById('powerBody');
-  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="9"><div class="emptyState"><div class="emptyIcon">⚡</div><p>該当する申請情報がありません</p></div></td></tr>`;return;}
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="11"><div class="emptyState"><div class="emptyIcon">⚡</div><p>該当する申請情報がありません</p></div></td></tr>`;return;}
 
   // アラートチェック
   const alertPowers=checkAlerts();
@@ -976,15 +994,17 @@ function renderPower(){
       <td style="font-size:12px">${fmtCapacity(p)}</td>
       <td style="font-size:12px;color:var(--text2);white-space:nowrap">${fmtDate(p.ansdate)}</td>
       <td>${badge(p.status,powerStatusMap)}</td>
-      <td>${isAdmin?visibleToHtml(p.visibleTo):'―'}</td>
-      <td onclick="event.stopPropagation()"><div class="actionBtns">
-        ${(p.coordinates||p.address)?`<button class="iconBtn map" onclick="openMap('${p.coordinates||''}','${p.address||''}')">🗺</button>`:''}
-        ${p.dropbox?`<button class="iconBtn dropbox" onclick="window.open('${p.dropbox}','_blank')">📁</button>`:''}
-        <button class="iconBtn detail" onclick="openPowerDetail('${p.id}')">詳細</button>
-        ${isAdmin?`<div class="menuWrap"><button class="menuBtn" onclick="toggleMenu('${menuId}')">⋯</button><div class="menuDropdown" id="${menuId}"><button class="menuItem" onclick="closeAllMenus();openPowerModal('${p.id}')">✏️ 編集</button><button class="menuItem" onclick="closeAllMenus();openPowerModal('${p.id}');setTimeout(()=>duplicatePower(),100)">📋 複製</button><button class="menuItem" onclick="closeAllMenus();openShareModalById('power','${p.id}')">🔐 公開設定</button><button class="menuItem danger" onclick="closeAllMenus();deletePower('${p.id}')">🗑 削除</button></div></div>`:''}
+      <td style="white-space:nowrap">${isAdmin?visibleToHtml(p.visibleTo):'―'}</td>
+      <td onclick="event.stopPropagation()"><div class="shryoCol">
+        ${(p.coordinates||p.address)?`<button class="shryoBtn map" onclick="openMap('${p.coordinates||''}','${p.address||''}')">🗺</button>`:`<button class="shryoBtn empty">🗺</button>`}
+        ${p.dropbox?`<button class="shryoBtn dropbox" onclick="window.open('${p.dropbox}','_blank')">📁</button>`:`<button class="shryoBtn empty">📁</button>`}
+        <button class="shryoBtn detail" onclick="openPowerDetail('${p.id}')">詳細</button>
       </div></td>
+      <td onclick="event.stopPropagation()">
+        ${isAdmin?`<div class="menuWrap"><button class="menuBtn" onclick="toggleMenu('${menuId}')">⋯</button><div class="menuDropdown" id="${menuId}"><button class="menuItem" onclick="closeAllMenus();openPowerModal('${p.id}')">✏️ 編集</button><button class="menuItem" onclick="closeAllMenus();openPowerModal('${p.id}');setTimeout(()=>duplicatePower(),100)">📋 複製</button><button class="menuItem" onclick="closeAllMenus();openShareModalById('power','${p.id}')">🔐 公開設定</button><button class="menuItem danger" onclick="closeAllMenus();deletePower('${p.id}')">🗑 削除</button></div></div>`:'―'}
+      </td>
     </tr>
-    ${hasLinked?`<tr class="accordionPanel" id="pacc_${p.id}" style="display:none"><td colspan="9"><div class="accordionContent"><span class="accordionLabel">🌍 紐付き土地</span>${linkedLands.map(l=>`<span class="accordionTag land" onclick="jumpToLand('${l.id}')">🌍 ${l.name} ${badge(l.status,landStatusMap)}</span>`).join('')}</div></td></tr>`:''}`;
+    ${hasLinked?`<tr class="accordionPanel" id="pacc_${p.id}" style="display:none"><td colspan="11"><div class="accordionContent"><span class="accordionLabel">🌍 紐付き土地</span>${linkedLands.map(l=>`<span class="accordionTag land" onclick="jumpToLand('${l.id}')">🌍 ${l.name} ${badge(l.status,landStatusMap)}</span>`).join('')}</div></td></tr>`:''}`;
   });
   tbody.innerHTML=rows.join('');
 }
@@ -1017,6 +1037,7 @@ function openPowerDetail(id){
       <div class="detailItem"><div class="dlabel">座標</div><div class="dvalue">${p.coordinates||'―'}</div></div>
       <div class="detailItem"><div class="dlabel">受付番号</div><div class="dvalue">${p.receiptNumber||'―'}</div></div>
       <div class="detailItem"><div class="dlabel">供給番号</div><div class="dvalue">${p.supplyNumber||'―'}</div></div>
+      <div class="detailItem"><div class="dlabel">公開状況</div><div class="dvalue">${visibleToHtml(p.visibleTo,true)||'非公開'}</div></div>
       <div class="detailItem full"><div class="dlabel">発電場所住所</div><div class="dvalue">${p.siteAddress||'―'}</div></div>
       <div class="detailItem full"><div class="dlabel">備考</div><div class="dvalue">${p.note||'―'}</div></div>
     </div>
