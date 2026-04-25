@@ -142,6 +142,34 @@
 
   .emptyState{text-align:center;padding:60px 20px;}
 
+  /* CSSツールチップ */
+  .tooltipWrap{position:relative;display:inline-block;}
+  .tooltipWrap .tooltipText{
+    visibility:hidden;opacity:0;
+    background:var(--text);color:white;
+    font-size:11px;border-radius:6px;
+    padding:6px 10px;white-space:pre;
+    position:absolute;z-index:300;
+    bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+    transition:opacity 0.15s;pointer-events:none;
+    box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  }
+  .tooltipWrap:hover .tooltipText{visibility:visible;opacity:1;}
+
+  /* アコーディオンミニテーブル */
+  .miniTable{width:100%;border-collapse:collapse;margin-top:4px;}
+  .miniTable th{padding:6px 10px;font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface);}
+  .miniTable td{padding:7px 10px;font-size:12px;border-bottom:1px solid rgba(226,232,240,0.5);vertical-align:middle;white-space:nowrap;}
+  .miniTable tr:last-child td{border-bottom:none;}
+  .miniTable tr:hover td{background:rgba(59,130,246,0.04);}
+  .miniEditBtn{padding:3px 10px;border-radius:6px;border:1.5px solid #fde68a;background:#fffbeb;color:#b45309;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;}
+  .miniEditBtn:hover{background:#fef3c7;}
+  .miniShryoCol{display:flex;gap:3px;align-items:center;}
+  .miniShryoBtn{width:24px;height:22px;border-radius:5px;border:1.5px solid transparent;background:transparent;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .miniShryoBtn.map{border-color:#a7f3d0;color:var(--accent2);background:var(--accent2-light);}
+  .miniShryoBtn.dropbox{border-color:#bfdbfe;color:var(--accent);background:var(--accent-light);}
+  .miniShryoBtn.empty{opacity:0;pointer-events:none;}
+
   /* 条件検索パネル */
   .filterPanel{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:14px;display:none;}
   .filterPanel.open{display:block;}
@@ -850,7 +878,27 @@ function renderLand(){
         ${isAdmin?`<div class="menuWrap"><button class="menuBtn" onclick="toggleMenu('${menuId}')">⋯</button><div class="menuDropdown" id="${menuId}"><button class="menuItem" onclick="closeAllMenus();openLandModal('${l.id}')">✏️ 編集</button><button class="menuItem" onclick="closeAllMenus();openShareModalById('land','${l.id}')">🔐 公開設定</button><button class="menuItem danger" onclick="closeAllMenus();deleteLand('${l.id}')">🗑 削除</button></div></div>`:'―'}
       </td>
     </tr>
-    ${hasLinked?`<tr class="accordionPanel" id="lacc_${l.id}" style="display:none"><td colspan="9"><div class="accordionContent"><span class="accordionLabel">⚡ 紐付き電力申請</span>${linkedPowers.map(p=>`<span class="accordionTag power" onclick="jumpToPower('${p.id}')">⚡ ${p.name} ${badge(p.status,powerStatusMap)}</span>`).join('')}</div></td></tr>`:''}`;
+    ${hasLinked?`<tr class="accordionPanel" id="lacc_${l.id}" style="display:none"><td colspan="9" style="padding:0 0 8px 24px;background:#f8faff;">
+      <table class="miniTable">
+        <thead><tr>
+          <th>⚡ 物件名</th><th>事業者</th><th>電源</th><th>電圧</th><th>ステータス</th><th>資料</th><th>編集</th>
+        </tr></thead>
+        <tbody>
+          ${linkedPowers.map(p=>`<tr>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${p.name||'―'}</td>
+            <td style="color:var(--text2)">${p.businessName||'―'}</td>
+            <td>${p.sourceType?badge(p.sourceType,sourceTypeMap):'―'}</td>
+            <td><span class="badge ${getVoltageClass(p.voltage)}" style="font-size:10px">${p.voltage||'―'}</span></td>
+            <td>${badge(p.status,powerStatusMap)}</td>
+            <td><div class="miniShryoCol">
+              ${(p.coordinates||p.address)?`<button class="miniShryoBtn map" onclick="openMap('${p.coordinates||''}','${p.address||''}')">🗺</button>`:`<button class="miniShryoBtn empty">🗺</button>`}
+              ${p.dropbox?`<button class="miniShryoBtn dropbox" onclick="window.open('${p.dropbox}','_blank')">📁</button>`:`<button class="miniShryoBtn empty">📁</button>`}
+            </div></td>
+            <td><button class="miniEditBtn" onclick="event.stopPropagation();openPowerModal('${p.id}')">✏️ 編集</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </td></tr>`:''}`;
   });
   tbody.innerHTML=rows.join('');
 }
@@ -1005,7 +1053,27 @@ function renderPower(){
         ${isAdmin?`<div class="menuWrap"><button class="menuBtn" onclick="toggleMenu('${menuId}')">⋯</button><div class="menuDropdown" id="${menuId}"><button class="menuItem" onclick="closeAllMenus();openPowerModal('${p.id}')">✏️ 編集</button><button class="menuItem" onclick="closeAllMenus();openPowerModal('${p.id}');setTimeout(()=>duplicatePower(),100)">📋 複製</button><button class="menuItem" onclick="closeAllMenus();openShareModalById('power','${p.id}')">🔐 公開設定</button><button class="menuItem danger" onclick="closeAllMenus();deletePower('${p.id}')">🗑 削除</button></div></div>`:'―'}
       </td>
     </tr>
-    ${hasLinked?`<tr class="accordionPanel" id="pacc_${p.id}" style="display:none"><td colspan="11"><div class="accordionContent"><span class="accordionLabel">🌍 紐付き土地</span>${linkedLands.map(l=>`<span class="accordionTag land" onclick="jumpToLand('${l.id}')">🌍 ${l.name} ${badge(l.status,landStatusMap)}</span>`).join('')}</div></td></tr>`:''}`;
+    ${hasLinked?`<tr class="accordionPanel" id="pacc_${p.id}" style="display:none"><td colspan="11" style="padding:0 0 8px 24px;background:#f8faff;">
+      <table class="miniTable">
+        <thead><tr>
+          <th>🌍 所在地・地番</th><th>面積</th><th>地目</th><th>地主・仲介</th><th>ステータス</th><th>資料</th><th>編集</th>
+        </tr></thead>
+        <tbody>
+          ${linkedLands.map(l=>`<tr>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${l.address||'―'}</td>
+            <td>${l.area?Number(String(l.area).replace(/[^0-9.]/g,'')).toLocaleString()+'㎡':'―'}</td>
+            <td style="color:var(--text2)">${l.landCategory||'―'}</td>
+            <td style="color:var(--text2)">${l.owner||'―'}</td>
+            <td>${badge(l.status,landStatusMap)}</td>
+            <td><div class="miniShryoCol">
+              ${(l.coordinates||l.address)?`<button class="miniShryoBtn map" onclick="openMap('${l.coordinates||''}','${l.address||''}')">🗺</button>`:`<button class="miniShryoBtn empty">🗺</button>`}
+              ${l.dropbox?`<button class="miniShryoBtn dropbox" onclick="window.open('${l.dropbox}','_blank')">📁</button>`:`<button class="miniShryoBtn empty">📁</button>`}
+            </div></td>
+            <td><button class="miniEditBtn" onclick="event.stopPropagation();openLandModal('${l.id}')">✏️ 編集</button></td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </td></tr>`:''}`;
   });
   tbody.innerHTML=rows.join('');
 }
