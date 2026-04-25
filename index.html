@@ -388,7 +388,7 @@
       <div class="tableWrap">
         <table>
           <thead><tr>
-            <th class="sortable" onclick="sortPower('name')">物件名 <span id="psort_name"></span></th><th class="sortable" onclick="sortPower('businessName')">事業者名 <span id="psort_businessName"></span></th><th class="sortable" onclick="sortPower('sourceType')">電源種別 <span id="psort_sourceType"></span></th><th class="sortable" onclick="sortPower('voltage')">電力会社・電圧 <span id="psort_voltage"></span></th><th>容量</th><th class="sortable" onclick="sortPower('ansdate')">回答日 <span id="psort_ansdate"></span></th><th class="sortable" onclick="sortPower('status')">ステータス <span id="psort_status"></span></th><th class="sortable" onclick="sortPower('visibleTo')">公開状況 <span id="psort_visibleTo"></span></th><th>資料</th><th>操作</th>
+            <th class="sortable" onclick="sortPower('name')">物件名 <span id="psort_name"></span></th><th class="sortable" onclick="sortPower('businessName')">事業者名 <span id="psort_businessName"></span></th><th class="sortable" onclick="sortPower('voltage')">電力会社 <span id="psort_voltage"></span></th><th>容量</th><th class="sortable" onclick="sortPower('ansdate')">回答日 <span id="psort_ansdate"></span></th><th class="sortable" onclick="sortPower('status')">ステータス <span id="psort_status"></span></th><th class="sortable" onclick="sortPower('visibleTo')">公開状況 <span id="psort_visibleTo"></span></th><th>資料</th><th>操作</th>
           </tr></thead>
           <tbody id="powerBody"></tbody>
         </table>
@@ -732,16 +732,12 @@ function getVoltageClass(v){
   return 'badge-gray';
 }
 
-function openMap(coords, address){
-  if(coords && coords.trim()){
-    const parts=coords.split(',');
-    if(parts.length>=2){
-      const lat=parts[0].trim(), lng=parts[1].trim();
-      window.open(`https://www.google.com/maps?q=${lat},${lng}`,'_blank');
-      return;
-    }
+function openMap(coords){
+  if(!coords||!coords.trim()){
+    alert('座標が登録されていません。編集から座標を入力してください。');
+    return;
   }
-  if(address) window.open(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`,'_blank');
+  window.open(`https://www.google.com/maps?q=${coords.trim()}`,'_blank');
 }
 
 function visibleToHtml(v, showDetail=false){
@@ -787,6 +783,22 @@ function addComma(val){
   const n=parseFloat(String(val||'').replace(/,/g,''));
   if(isNaN(n)) return val||'';
   return n.toLocaleString();
+}
+
+const sourceIcon={'PV':'☀️','BESS':'🔋','WP':'🌬️'};
+
+function voltageShort(v){
+  if(!v) return '';
+  // 「特別高圧 66kV」→「⚡特高 66kV」、「高圧 6.6kV」→「⚡高圧 6.6kV」、「低圧 200V」→「低圧 200V」
+  if(v.startsWith('特別高圧')) return v.replace('特別高圧','特高');
+  return v;
+}
+
+function sourceBadgeHtml(p){
+  const icon=sourceIcon[p.sourceType]||'';
+  const src=p.sourceType?`<span class="badge ${sourceTypeMap[p.sourceType]||'badge-gray'}" style="font-size:10px">${icon} ${p.sourceType}</span>`:'';
+  const volt=p.voltage?`<span class="badge ${getVoltageClass(p.voltage)}" style="font-size:10px">${voltageShort(p.voltage)}</span>`:'';
+  return `${src}${volt?'&nbsp;'+volt:''}`;
 }
 
 function fmtCapacity(p){
@@ -870,7 +882,7 @@ function renderLand(){
       <td>${(()=>{const lp=getLinkedPowers(l);return lp.length?`<span class="linkedTag" style="cursor:default">⚡ ${lp.length}件</span>`:`<span style="color:var(--text3)">―</span>`})()}</td>
       <td style="white-space:nowrap">${isAdmin?visibleToHtml(l.visibleTo):'―'}</td>
       <td onclick="event.stopPropagation()"><div class="shryoCol">
-        ${(l.coordinates||l.address)?`<button class="shryoBtn map" onclick="openMap('${l.coordinates||''}','${l.address||''}')">🗺</button>`:`<button class="shryoBtn empty">🗺</button>`}
+        ${l.coordinates?`<button class="shryoBtn map" onclick="openMap('${l.coordinates}')">🗺</button>`:`<button class="shryoBtn empty">🗺</button>`}
         ${l.dropbox?`<button class="shryoBtn dropbox" onclick="window.open('${l.dropbox}','_blank')">📁</button>`:`<button class="shryoBtn empty">📁</button>`}
         <button class="shryoBtn detail" onclick="openLandDetail('${l.id}')">詳細</button>
       </div></td>
@@ -881,19 +893,17 @@ function renderLand(){
     ${hasLinked?`<tr class="accordionPanel" id="lacc_${l.id}" style="display:none"><td colspan="9" style="padding:0 0 8px 24px;background:#f8faff;">
       <table class="miniTable">
         <thead><tr>
-          <th>⚡ 物件名</th><th>事業者</th><th>電源</th><th>電圧</th><th>容量</th><th>回答日</th><th>ステータス</th><th>資料</th>${isAdmin?'<th>編集</th>':''}
+          <th>⚡ 物件名</th><th>事業者</th><th>容量</th><th>回答日</th><th>ステータス</th><th>資料</th>${isAdmin?'<th>編集</th>':''}
         </tr></thead>
         <tbody>
           ${linkedPowers.map(p=>`<tr>
-            <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis">${p.name||'―'}</td>
+            <td style="max-width:200px"><div style="display:flex;flex-wrap:wrap;gap:2px;margin-bottom:2px">${sourceBadgeHtml(p)}</div><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${p.name||'―'}</span></td>
             <td style="color:var(--text2);font-size:11px">${p.businessName||'―'}</td>
-            <td>${p.sourceType?badge(p.sourceType,sourceTypeMap):'―'}</td>
-            <td><span class="badge ${getVoltageClass(p.voltage)}" style="font-size:10px">${p.voltage||'―'}</span></td>
             <td style="font-size:11px">${fmtCapacity(p)}</td>
             <td style="font-size:11px;color:var(--text2)">${fmtDate(p.ansdate)}</td>
             <td>${badge(p.status,powerStatusMap)}</td>
             <td><div class="miniShryoCol">
-              ${(p.coordinates||p.address)?`<button class="miniShryoBtn map" onclick="openMap('${p.coordinates||''}','${p.address||''}')">🗺</button>`:`<button class="miniShryoBtn empty">🗺</button>`}
+              ${p.coordinates?`<button class="miniShryoBtn map" onclick="openMap('${p.coordinates}')">🗺</button>`:`<button class="miniShryoBtn empty">🗺</button>`}
               ${p.dropbox?`<button class="miniShryoBtn dropbox" onclick="window.open('${p.dropbox}','_blank')">📁</button>`:`<button class="miniShryoBtn empty">📁</button>`}
             </div></td>
             ${isAdmin?`<td><button class="miniEditBtn" onclick="event.stopPropagation();openPowerModal('${p.id}')">✏️ 編集</button></td>`:''}
@@ -1011,7 +1021,7 @@ function renderPower(){
 
   const isAdmin=currentRole==='admin';
   const tbody=document.getElementById('powerBody');
-  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="11"><div class="emptyState"><div class="emptyIcon">⚡</div><p>該当する申請情報がありません</p></div></td></tr>`;return;}
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="9"><div class="emptyState"><div class="emptyIcon">⚡</div><p>該当する申請情報がありません</p></div></td></tr>`;return;}
 
   // アラートチェック
   const alertPowers=checkAlerts();
@@ -1034,20 +1044,20 @@ function renderPower(){
     const menuId=`pmenu_${p.id}`;
     return `<tr class="accordionRow" style="${isAlert?'background:#fffbeb;':''}cursor:pointer" onclick="toggleAccordion('pacc_${p.id}')">
       <td>
+        <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:3px">${sourceBadgeHtml(p)}</div>
         <strong style="white-space:nowrap">${p.name||'―'}</strong>
         ${p.receiptNumber?`<br><span style="font-size:11px;color:var(--text3)">🔢 ${p.receiptNumber}</span>`:''}
         ${isAlert?`<span class="badge badge-yellow" style="font-size:10px;margin-left:4px;">⚠️ 回答期限間近</span>`:''}
         ${hasLinked?`<button class="expandBtn" id="pexpand_${p.id}">▼</button>`:''}
       </td>
       <td style="font-size:12px;color:var(--text2);white-space:nowrap">${p.businessName||'―'}</td>
-      <td>${p.sourceType?badge(p.sourceType,sourceTypeMap):'―'}</td>
-      <td><span style="font-size:12px;color:var(--text2)">${p.company||'―'}</span><br><span class="badge ${getVoltageClass(p.voltage)}" style="font-size:10px;margin-top:2px;display:inline-block">${p.voltage||'―'}</span></td>
+      <td style="color:var(--text2);font-size:12px">${p.company||'―'}</td>
       <td style="font-size:12px">${fmtCapacity(p)}</td>
       <td style="font-size:12px;color:var(--text2);white-space:nowrap">${fmtDate(p.ansdate)}</td>
       <td>${badge(p.status,powerStatusMap)}</td>
       <td style="white-space:nowrap">${isAdmin?visibleToHtml(p.visibleTo):'―'}</td>
       <td onclick="event.stopPropagation()"><div class="shryoCol">
-        ${(p.coordinates||p.address)?`<button class="shryoBtn map" onclick="openMap('${p.coordinates||''}','${p.address||''}')">🗺</button>`:`<button class="shryoBtn empty">🗺</button>`}
+        ${p.coordinates?`<button class="shryoBtn map" onclick="openMap('${p.coordinates}')">🗺</button>`:`<button class="shryoBtn empty">🗺</button>`}
         ${p.dropbox?`<button class="shryoBtn dropbox" onclick="window.open('${p.dropbox}','_blank')">📁</button>`:`<button class="shryoBtn empty">📁</button>`}
         <button class="shryoBtn detail" onclick="openPowerDetail('${p.id}')">詳細</button>
       </div></td>
@@ -1055,7 +1065,7 @@ function renderPower(){
         ${isAdmin?`<div class="menuWrap"><button class="menuBtn" onclick="toggleMenu('${menuId}')">⋯</button><div class="menuDropdown" id="${menuId}"><button class="menuItem" onclick="closeAllMenus();openPowerModal('${p.id}')">✏️ 編集</button><button class="menuItem" onclick="closeAllMenus();openPowerModal('${p.id}');setTimeout(()=>duplicatePower(),100)">📋 複製</button><button class="menuItem" onclick="closeAllMenus();openShareModalById('power','${p.id}')">🔐 公開設定</button><button class="menuItem danger" onclick="closeAllMenus();deletePower('${p.id}')">🗑 削除</button></div></div>`:'―'}
       </td>
     </tr>
-    ${hasLinked?`<tr class="accordionPanel" id="pacc_${p.id}" style="display:none"><td colspan="11" style="padding:0 0 8px 24px;background:#f8faff;">
+    ${hasLinked?`<tr class="accordionPanel" id="pacc_${p.id}" style="display:none"><td colspan="9" style="padding:0 0 8px 24px;background:#f8faff;">
       <table class="miniTable">
         <thead><tr>
           <th>🌍 所在地・地番</th><th>面積</th><th>地目</th><th>地主・仲介</th><th>ステータス</th><th>資料</th>${isAdmin?'<th>編集</th>':''}
@@ -1068,7 +1078,7 @@ function renderPower(){
             <td style="color:var(--text2)">${l.owner||'―'}</td>
             <td>${badge(l.status,landStatusMap)}</td>
             <td><div class="miniShryoCol">
-              ${(l.coordinates||l.address)?`<button class="miniShryoBtn map" onclick="openMap('${l.coordinates||''}','${l.address||''}')">🗺</button>`:`<button class="miniShryoBtn empty">🗺</button>`}
+              ${l.coordinates?`<button class="miniShryoBtn map" onclick="openMap('${l.coordinates}')">🗺</button>`:`<button class="miniShryoBtn empty">🗺</button>`}
               ${l.dropbox?`<button class="miniShryoBtn dropbox" onclick="window.open('${l.dropbox}','_blank')">📁</button>`:`<button class="miniShryoBtn empty">📁</button>`}
             </div></td>
             ${isAdmin?`<td><button class="miniEditBtn" onclick="event.stopPropagation();openLandModal('${l.id}')">✏️ 編集</button></td>`:''}
