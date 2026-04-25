@@ -721,7 +721,8 @@ function visibleToHtml(v, showDetail=false){
   const clients=v.split(',').map(c=>c.trim()).filter(c=>c&&c.toLowerCase()!=='blade');
   if(!clients.length) return `<span class="hiddenCount">🔒 非公開</span>`;
   if(showDetail) return clients.map(c=>`<span class="visibleTag">👁 ${c}</span>`).join(' ');
-  return `<span class="visibleCount">👁 ${clients.length}社</span>`;
+  const tooltip=clients.join('\n');
+  return `<span class="visibleCount" title="${tooltip}">👁 ${clients.length}社</span>`;
 }
 
 function visibleCount(v){
@@ -838,7 +839,7 @@ function renderLand(){
       <td style="font-size:12px;color:var(--text2)">${l.landCategory||'―'}</td>
       <td style="color:var(--text2);font-size:12px">${l.owner||'―'}</td>
       <td>${badge(l.status,landStatusMap)}</td>
-      <td>${getLinkedPowers(l).map(p=>`<span class="linkedTag clickableTag" onclick="event.stopPropagation();jumpToPower('${p.id}')">⚡ ${p.name}</span>`).join(' ')||`<span style="color:var(--text3)">―</span>`}</td>
+      <td>${(()=>{const lp=getLinkedPowers(l);return lp.length?`<span class="linkedTag" style="cursor:default">⚡ ${lp.length}件</span>`:`<span style="color:var(--text3)">―</span>`})()}</td>
       <td style="white-space:nowrap">${isAdmin?visibleToHtml(l.visibleTo):'―'}</td>
       <td onclick="event.stopPropagation()"><div class="shryoCol">
         ${(l.coordinates||l.address)?`<button class="shryoBtn map" onclick="openMap('${l.coordinates||''}','${l.address||''}')">🗺</button>`:`<button class="shryoBtn empty">🗺</button>`}
