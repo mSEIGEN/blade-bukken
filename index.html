@@ -142,6 +142,30 @@
 
   .emptyState{text-align:center;padding:60px 20px;}
 
+  /* タグ選択ボタン */
+  .tagSelector{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+  .tagBtn{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;}
+  .tagBtn:hover{border-color:var(--border2);color:var(--text);}
+  .tagBtn.selected{border-color:var(--accent);background:var(--accent-light);color:var(--accent);}
+  .tagBtn.selected.bess{border-color:#7c3aed;background:#f5f3ff;color:#7c3aed;}
+  .tagBtn.selected.pv{border-color:#d97706;background:#fffbeb;color:#d97706;}
+  .tagBtn.selected.wp{border-color:#0891b2;background:#ecfeff;color:#0891b2;}
+  .tagBtn.selected.tokko{border-color:#7c3aed;background:#f5f3ff;color:#7c3aed;}
+  .tagBtn.selected.kouatsu{border-color:#d97706;background:#fff7ed;color:#d97706;}
+  .tagBtn.selected.teiatu{border-color:#0891b2;background:#ecfeff;color:#0891b2;}
+  .tagBtn.selected.jisha{border-color:#059669;background:#ecfdf5;color:#059669;}
+  .tagBtn.selected.daiko{border-color:#2563eb;background:#eff6ff;color:#2563eb;}
+
+  /* 自社/申請代行フィルターボタン */
+  .dealFilterBtns{display:flex;gap:6px;}
+  .dealFilterBtn{padding:7px 16px;border-radius:9px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;}
+  .dealFilterBtn.active{border-color:var(--accent);background:var(--accent-light);color:var(--accent);}
+  .dealFilterBtn:hover:not(.active){background:var(--surface2);}
+
+  /* 申請タイプバッジ */
+  .badge-deal-jisha{background:#ecfdf5;color:#065f46;}
+  .badge-deal-daiko{background:#eff6ff;color:#1d4ed8;}
+
   /* CSSツールチップ */
   .tooltipWrap{position:relative;display:inline-block;}
   .tooltipWrap .tooltipText{
@@ -332,6 +356,11 @@
           <input class="searchInput" type="text" placeholder="🔍 物件名・事業者名で検索" oninput="renderPower()">
           <button class="filterBtn" id="powerFilterBtn" onclick="toggleFilterPanel('power')">条件検索 ▼</button>
           <button class="clearBtn" onclick="clearPowerFilter()" style="display:none" id="powerClearBtn">✕ 解除</button>
+          <div class="dealFilterBtns admin-only">
+            <button class="dealFilterBtn active" id="deal_all" onclick="setDealFilter('')">すべて</button>
+            <button class="dealFilterBtn" id="deal_jisha" onclick="setDealFilter('自社')">🏠 自社</button>
+            <button class="dealFilterBtn" id="deal_daiko" onclick="setDealFilter('申請代行')">🏢 申請代行</button>
+          </div>
         </div>
         <div style="display:flex;gap:8px;">
           <button class="addBtn admin-only" style="background:linear-gradient(135deg,#059669,#047857)" onclick="exportCSV()">📥 CSV</button>
@@ -372,6 +401,13 @@
             <select id="pf_voltage" onchange="renderPower();updateClearBtn('power')">
               <option value="">すべて</option>
               <option>特別高圧</option><option>高圧</option><option>低圧</option>
+            </select>
+          </div>
+          <div class="filterPanelItem">
+            <label>申請タイプ</label>
+            <select id="pf_dealType" onchange="renderPower();updateClearBtn('power')">
+              <option value="">すべて</option>
+              <option>自社</option><option>申請代行</option>
             </select>
           </div>
           <div class="filterPanelItem">
@@ -452,22 +488,26 @@
     <div class="sectionDivider">電力情報</div>
     <div class="formRow">
       <div class="formGroup2"><label>電力会社</label><select id="p_company"><option>東京電力</option><option>関西電力</option><option>中部電力</option><option>東北電力</option><option>九州電力</option><option>中国電力</option><option>四国電力</option><option>北海道電力</option><option>北陸電力</option><option>沖縄電力</option></select></div>
-      <div class="formGroup2"><label>電圧区分</label>
-        <select id="p_voltage">
-          <option value="">選択してください</option>
-          <optgroup label="特別高圧"><option>特別高圧 500kV</option><option>特別高圧 220kV</option><option>特別高圧 154kV</option><option>特別高圧 110kV</option><option>特別高圧 66kV</option><option>特別高圧 33kV</option><option>特別高圧 22kV</option></optgroup>
-          <optgroup label="高圧"><option>高圧 6.6kV</option></optgroup>
-          <optgroup label="低圧"><option>低圧 200V</option><option>低圧 100V</option></optgroup>
-        </select>
+      <div class="formGroup2">
+        <label>電圧区分</label>
+        <input type="hidden" id="p_voltage">
+        <div class="tagSelector">
+          <button type="button" class="tagBtn tokko" onclick="selectTag('p_voltage','特別高圧 66kV',this,'tokko')">⚡ 特高66kV</button>
+          <button type="button" class="tagBtn kouatsu" onclick="selectTag('p_voltage','高圧 6.6kV',this,'kouatsu')">🔶 高圧6.6kV</button>
+          <button type="button" class="tagBtn teiatu" onclick="selectTag('p_voltage','低圧',this,'teiatu')">🔵 低圧</button>
+        </div>
       </div>
     </div>
     <div class="formRow">
       <div class="formGroup2"><label>申請種別</label><select id="p_type" onchange="onTypeChange()"><option>接続検討</option><option>系統連系申込</option><option>系統連系申込（低圧）</option></select></div>
-      <div class="formGroup2"><label>電源種別</label>
-        <select id="p_sourceType" onchange="onSourceTypeChange()">
-          <option value="">選択してください</option>
-          <option>PV</option><option>BESS</option><option>WP</option>
-        </select>
+      <div class="formGroup2">
+        <label>電源種別</label>
+        <input type="hidden" id="p_sourceType">
+        <div class="tagSelector">
+          <button type="button" class="tagBtn pv" onclick="selectTag('p_sourceType','PV',this,'pv');onSourceTypeChange()">☀️ PV</button>
+          <button type="button" class="tagBtn bess" onclick="selectTag('p_sourceType','BESS',this,'bess');onSourceTypeChange()">🔋 BESS</button>
+          <button type="button" class="tagBtn wp" onclick="selectTag('p_sourceType','WP',this,'wp');onSourceTypeChange()">🌬️ WP</button>
+        </div>
       </div>
     </div>
     <div id="pvwpFields" style="display:none">
@@ -488,7 +528,17 @@
         <div class="formGroup2"></div>
       </div>
     </div>
-    <div class="sectionDivider">申請詳細</div>
+    <div class="sectionDivider">申請タイプ・詳細</div>
+    <div class="formRow full">
+      <div class="formGroup2">
+        <label>申請タイプ</label>
+        <input type="hidden" id="p_dealType">
+        <div class="tagSelector">
+          <button type="button" class="tagBtn jisha" onclick="selectTag('p_dealType','自社',this,'jisha')">🏠 自社</button>
+          <button type="button" class="tagBtn daiko" onclick="selectTag('p_dealType','申請代行',this,'daiko')">🏢 申請代行</button>
+        </div>
+      </div>
+    </div>
     <div class="formRow">
       <div class="formGroup2"><label>回答日</label><input type="date" id="p_ansdate"></div>
       <div class="formGroup2"><label>工事費負担金（円）</label><input type="text" id="p_cost" placeholder="例：12,500,000" oninput="calcGuarantee()" onblur="fmtNumInput(this)" onfocus="unFmtNumInput(this)"></div>
@@ -797,8 +847,9 @@ function voltageShort(v){
 function sourceBadgeHtml(p){
   const icon=sourceIcon[p.sourceType]||'';
   const src=p.sourceType?`<span class="badge ${sourceTypeMap[p.sourceType]||'badge-gray'}" style="font-size:10px">${icon} ${p.sourceType}</span>`:'';
-  const volt=p.voltage?`<span class="badge ${getVoltageClass(p.voltage)}" style="font-size:10px">${voltageShort(p.voltage)}</span>`:'';
-  return `${src}${volt?'&nbsp;'+volt:''}`;
+  const volt=p.voltage?`<span class="badge ${getVoltageClass(p.voltage)}" style="font-size:10px">${voltageShort(p.voltage)}</span>`:'';  
+  const deal=p.dealType?`<span class="badge ${p.dealType==='自社'?'badge-deal-jisha':'badge-deal-daiko'}" style="font-size:10px">${p.dealType==='自社'?'🏠':'🏢'} ${p.dealType}</span>`:'';
+  return `${src}${volt?'&nbsp;'+volt:''}${deal?'&nbsp;'+deal:''}`;
 }
 
 function fmtCapacity(p){
@@ -997,6 +1048,7 @@ function renderPower(){
   const pfPref=document.getElementById('pf_pref')?document.getElementById('pf_pref').value:'';
   const pfVoltage=document.getElementById('pf_voltage')?document.getElementById('pf_voltage').value:'';
   const pfDeadline=parseInt(document.getElementById('pf_deadline')?document.getElementById('pf_deadline').value:'')||0;
+  const pfDealType=document.getElementById('pf_dealType')?document.getElementById('pf_dealType').value:'';
   const now=new Date();
   const filtered=powers.filter(p=>{
     const pref=extractPref(p.siteAddress||p.coordinates||'');
@@ -1008,7 +1060,9 @@ function renderPower(){
       &&(!pfCompany||p.company===pfCompany)
       &&(!pfPref||pref===pfPref)
       &&(!pfVoltage||voltageGroup===pfVoltage)
-      &&(!pfDeadline||deadlineOk);
+      &&(!pfDeadline||deadlineOk)
+      &&(!pfDealType||p.dealType===pfDealType)
+      &&(!dealFilter||p.dealType===dealFilter);
   });
   const totalCost=powers.reduce((s,p)=>s+(parseInt((p.cost||'').toString().replace(/[^0-9]/g,''))||0),0);
 
@@ -1129,7 +1183,7 @@ function openPowerDetail(id){
 function openPowerModal(id=null){
   editPowerId=id;
   document.getElementById('powerModalTitle').textContent=id?'⚡ 申請を編集':'⚡ 電力申請を追加';
-  const fields=['name','businessName','company','voltage','type','sourceType','ansdate','cost','guaranteeAmount','guaranteeStatus','status','coordinates','dropbox','note','kw','kwh','kw_discharge','kw_charge','receiptNumber','supplyNumber','siteAddress'];
+  const fields=['name','businessName','company','type','ansdate','cost','guaranteeAmount','guaranteeStatus','status','coordinates','dropbox','note','kw','kwh','kw_discharge','kw_charge','receiptNumber','supplyNumber','siteAddress','dealType'];
   if(id){
     const p=powers.find(x=>x.id==id);
     fields.forEach(f=>{
@@ -1191,6 +1245,7 @@ async function savePower(){
     dropbox:document.getElementById('p_dropbox').value,
     note:document.getElementById('p_note').value,
     landLink:selectedLandIds.join(','),
+    dealType:document.getElementById('p_dealType')?document.getElementById('p_dealType').value:'',
     receiptNumber:document.getElementById('p_receiptNumber')?document.getElementById('p_receiptNumber').value:'',
     supplyNumber:document.getElementById('p_supplyNumber')?document.getElementById('p_supplyNumber').value:'',
     siteAddress:document.getElementById('p_siteAddress')?document.getElementById('p_siteAddress').value:'',
@@ -1460,9 +1515,55 @@ function clearLandFilter(){
 }
 
 function clearPowerFilter(){
-  ['pf_status','pf_sourceType','pf_company','pf_pref','pf_voltage','pf_deadline'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['pf_status','pf_sourceType','pf_company','pf_pref','pf_voltage','pf_deadline','pf_dealType'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); dealFilter=''; setDealFilter('');
   document.querySelector('#tab-power .searchInput').value='';
   document.getElementById('powerClearBtn').style.display='none';
+  renderPower();
+}
+
+// ========== タグ選択 ==========
+function selectTag(fieldId, value, btn, colorClass){
+  // 同じグループのボタンを全部解除
+  const group = btn.closest('.tagSelector');
+  group.querySelectorAll('.tagBtn').forEach(b=>{
+    b.classList.remove('selected','bess','pv','wp','tokko','kouatsu','teiatu','jisha','daiko');
+  });
+  // 選択
+  const field = document.getElementById(fieldId);
+  if(field.value === value){
+    // 同じタグを再クリック→解除
+    field.value = '';
+  } else {
+    field.value = value;
+    btn.classList.add('selected', colorClass);
+  }
+}
+
+function setTagFromValue(fieldId, value, colorMap){
+  const field = document.getElementById(fieldId);
+  if(!field || !value) return;
+  field.value = value;
+  const group = field.nextElementSibling;
+  if(!group) return;
+  group.querySelectorAll('.tagBtn').forEach(b=>{
+    const btnVal = b.getAttribute('onclick').match(/'([^']+)',this/)?.[1];
+    if(btnVal === value){
+      b.classList.remove('selected','bess','pv','wp','tokko','kouatsu','teiatu','jisha','daiko');
+      b.classList.add('selected', colorMap[value]||'');
+    }
+  });
+}
+
+// ========== 自社/申請代行フィルター ==========
+let dealFilter = '';
+function setDealFilter(val){
+  dealFilter = val;
+  ['deal_all','deal_jisha','deal_daiko'].forEach(id=>{
+    document.getElementById(id)?.classList.remove('active');
+  });
+  if(!val) document.getElementById('deal_all')?.classList.add('active');
+  else if(val==='自社') document.getElementById('deal_jisha')?.classList.add('active');
+  else document.getElementById('deal_daiko')?.classList.add('active');
   renderPower();
 }
 
