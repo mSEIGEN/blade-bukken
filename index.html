@@ -1113,11 +1113,11 @@ function renderPower(){
     const menuId=`pmenu_${p.id}`;
     return `<tr class="accordionRow" style="${isAlert?'background:#fffbeb;':''}cursor:pointer" onclick="toggleAccordion('pacc_${p.id}')">
       <td>
-        <div style="display:flex;flex-wrap:nowrap;gap:3px;margin-bottom:3px">${sourceBadgeHtml(p)}</div>
+        <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:3px">${sourceBadgeHtml(p)}</div>
         <strong style="white-space:nowrap">${p.name||'―'}</strong>
         ${hasLinked?`<button class="expandBtn" id="pexpand_${p.id}">▼</button>`:''}
-        ${p.receiptNumber?`<br><span style="font-size:11px;color:var(--text3)">🔢 ${p.receiptNumber}</span>`:''}
         ${isAlert?`<span class="badge badge-yellow" style="font-size:10px;margin-left:4px;">⚠️ 回答期限間近</span>`:''}
+        ${p.receiptNumber?`<br><span style="font-size:11px;color:var(--text3)">🔢 ${p.receiptNumber}</span>`:''}
       </td>
       <td style="font-size:12px;color:var(--text2);white-space:nowrap">${p.businessName||'―'}</td>
       <td style="color:var(--text2);font-size:12px">${p.company||'―'}</td>
