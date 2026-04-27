@@ -142,6 +142,12 @@
 
   .emptyState{text-align:center;padding:60px 20px;}
 
+  /* 電力申請物件名セル */
+  .power-name-cell{display:flex;flex-direction:column;gap:3px;white-space:normal;}
+  .power-tags{display:flex;flex-wrap:wrap;gap:3px;}
+  .power-title-row{display:flex;align-items:center;gap:4px;white-space:nowrap;}
+  .power-receipt{display:block;font-size:11px;color:var(--text3);}
+
   /* タグ選択ボタン */
   .tagSelector{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
   .tagBtn{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;}
@@ -1112,12 +1118,16 @@ function renderPower(){
     const hasLinked=linkedLands.length>0;
     const menuId=`pmenu_${p.id}`;
     return `<tr class="accordionRow" style="${isAlert?'background:#fffbeb;':''}cursor:pointer" onclick="toggleAccordion('pacc_${p.id}')">
-      <td>
-        <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:3px">${sourceBadgeHtml(p)}</div>
-        <strong style="white-space:nowrap">${p.name||'―'}</strong>
-        ${hasLinked?`<button class="expandBtn" id="pexpand_${p.id}">▼</button>`:''}
-        ${isAlert?`<span class="badge badge-yellow" style="font-size:10px;margin-left:4px;">⚠️ 回答期限間近</span>`:''}
-        ${p.receiptNumber?`<br><span style="font-size:11px;color:var(--text3)">🔢 ${p.receiptNumber}</span>`:''}
+      <td style="vertical-align:top;white-space:normal;">
+        <div class="power-name-cell">
+          <div class="power-tags">${sourceBadgeHtml(p)}</div>
+          <div class="power-title-row">
+            <strong>${p.name||'―'}</strong>
+            ${hasLinked?`<button class="expandBtn" id="pexpand_${p.id}">▼</button>`:''}
+            ${isAlert?`<span class="badge badge-yellow" style="font-size:10px;">⚠️ 回答期限間近</span>`:''}
+          </div>
+          ${p.receiptNumber?`<div class="power-receipt">🔢 ${p.receiptNumber}</div>`:''}
+        </div>
       </td>
       <td style="font-size:12px;color:var(--text2);white-space:nowrap">${p.businessName||'―'}</td>
       <td style="color:var(--text2);font-size:12px">${p.company||'―'}</td>
