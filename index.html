@@ -1189,9 +1189,23 @@ function openPowerDetail(id){
   document.getElementById('detailModal').classList.add('active');
 }
 
+function resetAllTags(){
+  // 全タグセレクターのボタンをリセット
+  document.querySelectorAll('.tagSelector .tagBtn').forEach(b=>{
+    b.classList.remove('selected','bess','pv','wp','tokko','kouatsu','teiatu','jisha','daiko');
+  });
+  // hiddenフィールドもクリア
+  ['p_sourceType','p_voltage','p_dealType'].forEach(fid=>{
+    const f=document.getElementById(fid);
+    if(f) f.value='';
+  });
+}
+
 function openPowerModal(id=null){
   editPowerId=id;
   document.getElementById('powerModalTitle').textContent=id?'⚡ 申請を編集':'⚡ 電力申請を追加';
+  // まず全タグをリセット
+  resetAllTags();
   const fields=['name','businessName','company','type','ansdate','cost','guaranteeAmount','guaranteeStatus','status','coordinates','dropbox','note','kw','kwh','kw_discharge','kw_charge','receiptNumber','supplyNumber','siteAddress','dealType'];
   if(id){
     const p=powers.find(x=>x.id==id);
@@ -1238,6 +1252,7 @@ function openPowerModal(id=null){
     document.getElementById('pvwpFields').style.display='none';
     document.getElementById('bessFields').style.display='none';
   }
+  document.getElementById('calcHint').textContent='';
   document.getElementById('calcHint').textContent='';
   // 土地紐付けの初期化
   if(id){
@@ -1308,7 +1323,7 @@ function openShareModal(sheet,id,name,visibleTo){
   shareTarget={sheet,id,visibleTo:visibleTo||''};
   document.getElementById('shareModalName').textContent=`📋 ${name}`;
   const currentVisible=(visibleTo||'').split(',').map(s=>s.trim()).filter(Boolean);
-  const clients=clientIds||[];
+  const clients=(clientIds||[]).filter(c=>c&&c.toLowerCase()!=='blade');
   if(!clients.length){
     document.getElementById('shareList').innerHTML=`<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">登録されている取引先がありません</div>`;
   } else {
