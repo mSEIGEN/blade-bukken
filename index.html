@@ -268,11 +268,13 @@
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 <style>
-  .drag-handle{cursor:grab;color:var(--text3);padding:0 6px;font-size:14px;user-select:none;flex-shrink:0;}
-  .drag-handle:active{cursor:grabbing;}
-  tr.sortable-ghost{opacity:0.4;background:#eff6ff;}
-  tr.sortable-chosen{background:#f8faff;}
-  tr.accordionRow td:first-child{display:flex;align-items:center;gap:4px;}
+  tr.sortable-ghost td{opacity:0.4;background:#eff6ff !important;}
+  tr.sortable-chosen td{background:#f0f7ff !important;}
+  body.sort-mode tr.accordionRow{cursor:grab;}
+  body.sort-mode tr.accordionRow:active{cursor:grabbing;}
+  body.sort-mode tr.accordionRow td{user-select:none;}
+  .sortModeBtn{padding:8px 16px;border:1.5px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.2s;}
+  .sortModeBtn.active{border-color:#7c3aed;background:#f5f3ff;color:#7c3aed;}
 </style>
 </head>
 <body>
@@ -308,7 +310,10 @@
           <button class="filterBtn" id="landFilterBtn" onclick="toggleFilterPanel('land')">条件検索 ▼</button>
           <button class="clearBtn" onclick="clearLandFilter()" style="display:none" id="landClearBtn">✕ 解除</button>
         </div>
-        <button class="addBtn admin-only" onclick="openLandModal()">＋ 土地を追加</button>
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="sortModeBtn admin-only" id="landSortModeBtn" onclick="toggleSortMode('land')">🔀 並び替え</button>
+          <button class="addBtn admin-only" onclick="openLandModal()">＋ 土地を追加</button>
+        </div>
       </div>
       <div class="filterPanel" id="landFilterPanel">
         <div class="filterPanelGrid">
@@ -370,7 +375,8 @@
             <button class="dealFilterBtn" id="deal_daiko" onclick="setDealFilter('申請代行')">🏢 申請代行</button>
           </div>
         </div>
-        <div style="display:flex;gap:8px;">
+        <div style="display:flex;gap:8px;align-items:center;">
+          <button class="sortModeBtn admin-only" id="powerSortModeBtn" onclick="toggleSortMode('power')">🔀 並び替え</button>
           <button class="addBtn admin-only" style="background:linear-gradient(135deg,#059669,#047857)" onclick="exportCSV()">📥 CSV</button>
           <button class="addBtn admin-only" onclick="openPowerModal()">＋ 申請を追加</button>
         </div>
@@ -938,9 +944,8 @@ function renderLand(){
     const linkedPowers=getLinkedPowers(l);
     const hasLinked=linkedPowers.length>0;
     const menuId=`lmenu_${l.id}`;
-    return `<tr class="accordionRow" data-id="${l.id}">
-      <td style="color:var(--text2);font-size:12px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onclick="toggleAccordion('lacc_${l.id}')">
-        <span class="drag-handle" onclick="event.stopPropagation()">☰</span>
+    return `<tr class="accordionRow" data-id="${l.id}" onclick="onRowClick(event,'lacc_${l.id}')">
+      <td style="color:var(--text2);font-size:12px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
         <strong style="color:var(--text)">${l.address||'―'}</strong>
         ${hasLinked?`<button class="expandBtn" id="lexpand_${l.id}">▼</button>`:''}
       </td>
@@ -1806,50 +1811,82 @@ window.onload=()=>{
 };
 
 let landSortable=null, powerSortable=null;
+let landSortMode=false, powerSortMode=false;
+
+function onRowClick(event, accordionId){
+  // 並び替えモード中はアコーディオンを開かない
+  if(document.body.classList.contains('sort-mode')) return;
+  // ボタンクリックは無視
+  if(event.target.closest('button')||event.target.closest('.menuWrap')) return;
+  toggleAccordion(accordionId);
+}
+
+function toggleSortMode(tab){
+  const isLand = tab==='land';
+  const tbody = document.getElementById(isLand?'landBody':'powerBody');
+  const btn = document.getElementById(isLand?'landSortModeBtn':'powerSortModeBtn');
+  const isActive = isLand ? landSortMode : powerSortMode;
+
+  if(isActive){
+    // モード解除
+    if(isLand) landSortMode=false; else powerSortMode=false;
+    btn.classList.remove('active');
+    btn.textContent='🔀 並び替え';
+    document.body.classList.remove('sort-mode');
+    if(isLand && landSortable){ landSortable.option('disabled',true); }
+    if(!isLand && powerSortable){ powerSortable.option('disabled',true); }
+  } else {
+    // モード開始
+    if(isLand) landSortMode=true; else powerSortMode=true;
+    btn.classList.add('active');
+    btn.textContent='✅ 完了';
+    document.body.classList.add('sort-mode');
+    // Sortable初期化または有効化
+    if(isLand){
+      if(!landSortable){
+        landSortable=Sortable.create(tbody,{
+          disabled:false,
+          animation:150,
+          ghostClass:'sortable-ghost',
+          chosenClass:'sortable-chosen',
+          filter:'.accordionPanel',
+          onEnd:()=>syncOrder('land')
+        });
+      } else { landSortable.option('disabled',false); }
+    } else {
+      if(!powerSortable){
+        powerSortable=Sortable.create(tbody,{
+          disabled:false,
+          animation:150,
+          ghostClass:'sortable-ghost',
+          chosenClass:'sortable-chosen',
+          filter:'.accordionPanel',
+          onEnd:()=>syncOrder('power')
+        });
+      } else { powerSortable.option('disabled',false); }
+    }
+  }
+}
+
+function syncOrder(tab){
+  const isLand = tab==='land';
+  const tbody = document.getElementById(isLand?'landBody':'powerBody');
+  const panelPrefix = isLand?'lacc_':'pacc_';
+  const rows = tbody.querySelectorAll('tr.accordionRow');
+  // アコーディオンパネルを正しい位置に移動
+  rows.forEach(row=>{
+    const id=row.getAttribute('data-id');
+    const panel=document.getElementById(panelPrefix+id);
+    if(panel) row.after(panel);
+  });
+  // データ配列の順番をDOMに合わせて更新
+  const newOrder=Array.from(rows).map(r=>r.getAttribute('data-id'));
+  if(isLand) lands.sort((a,b)=>newOrder.indexOf(String(a.id))-newOrder.indexOf(String(b.id)));
+  else powers.sort((a,b)=>newOrder.indexOf(String(a.id))-newOrder.indexOf(String(b.id)));
+}
 
 function initSortable(){
-  const landTbody=document.getElementById('landBody');
-  const powerTbody=document.getElementById('powerBody');
-  if(landTbody && typeof Sortable !== 'undefined'){
-    landSortable=Sortable.create(landTbody,{
-      handle:'.drag-handle',
-      animation:150,
-      ghostClass:'sortable-ghost',
-      chosenClass:'sortable-chosen',
-      filter:'.accordionPanel',
-      onEnd: function(evt){
-        // アコーディオンパネルを正しい位置に移動
-        const rows=landTbody.querySelectorAll('tr.accordionRow');
-        rows.forEach(row=>{
-          const id=row.getAttribute('data-id');
-          const panel=document.getElementById('lacc_'+id);
-          if(panel) row.after(panel);
-        });
-        // landsの順番をDOMに合わせて更新
-        const newOrder=Array.from(landTbody.querySelectorAll('tr.accordionRow')).map(r=>r.getAttribute('data-id'));
-        lands.sort((a,b)=>newOrder.indexOf(String(a.id))-newOrder.indexOf(String(b.id)));
-      }
-    });
-  }
-  if(powerTbody && typeof Sortable !== 'undefined'){
-    powerSortable=Sortable.create(powerTbody,{
-      handle:'.drag-handle',
-      animation:150,
-      ghostClass:'sortable-ghost',
-      chosenClass:'sortable-chosen',
-      filter:'.accordionPanel',
-      onEnd: function(evt){
-        const rows=powerTbody.querySelectorAll('tr.accordionRow');
-        rows.forEach(row=>{
-          const id=row.getAttribute('data-id');
-          const panel=document.getElementById('pacc_'+id);
-          if(panel) row.after(panel);
-        });
-        const newOrder=Array.from(powerTbody.querySelectorAll('tr.accordionRow')).map(r=>r.getAttribute('data-id'));
-        powers.sort((a,b)=>newOrder.indexOf(String(a.id))-newOrder.indexOf(String(b.id)));
-      }
-    });
-  }
+  // 初期状態はdisabled、toggleSortModeで有効化
 }
 </script>
 </body>
