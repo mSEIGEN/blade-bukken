@@ -863,10 +863,10 @@ function voltageShort(v){
 
 function sourceBadgeHtml(p){
   const icon=sourceIcon[p.sourceType]||'';
-  const src=p.sourceType?`<span class="badge ${sourceTypeMap[p.sourceType]||'badge-gray'}" style="font-size:10px">${icon} ${p.sourceType}</span>`:'';
-  const volt=p.voltage?`<span class="badge ${getVoltageClass(p.voltage)}" style="font-size:10px">${voltageShort(p.voltage)}</span>`:'';  
-  const deal=p.dealType?`<span class="badge ${p.dealType==='自社'?'badge-deal-jisha':'badge-deal-daiko'}" style="font-size:10px">${p.dealType==='自社'?'🏠':'🏢'} ${p.dealType}</span>`:'';
-  return `${src}${volt?'&nbsp;'+volt:''}${deal?'&nbsp;'+deal:''}`;
+  const src=p.sourceType?`<span class="badge ${sourceTypeMap[p.sourceType]||'badge-gray'}" style="font-size:10px;white-space:nowrap">${icon} ${p.sourceType}</span>`:'';
+  const volt=p.voltage?`<span class="badge ${getVoltageClass(p.voltage)}" style="font-size:10px;white-space:nowrap">${voltageShort(p.voltage)}</span>`:'';
+  const deal=p.dealType?`<span class="badge ${p.dealType==='自社'?'badge-deal-jisha':'badge-deal-daiko'}" style="font-size:10px;white-space:nowrap">${p.dealType==='自社'?'🏠':'🏢'} ${p.dealType}</span>`:'';
+  return [src,volt,deal].filter(Boolean).join('&nbsp;');
 }
 
 function fmtCapacity(p){
@@ -1116,7 +1116,7 @@ function renderPower(){
     const menuId=`pmenu_${p.id}`;
     return `<tr class="accordionRow" style="${isAlert?'background:#fffbeb;':''}cursor:pointer" onclick="toggleAccordion('pacc_${p.id}')">
       <td>
-        <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:3px">${sourceBadgeHtml(p)}</div>
+        <div style="display:flex;flex-wrap:nowrap;gap:3px;margin-bottom:2px;overflow:hidden">${sourceBadgeHtml(p)}</div>
         <strong style="white-space:nowrap">${p.name||'―'}</strong>
         ${p.receiptNumber?`<br><span style="font-size:11px;color:var(--text3)">🔢 ${p.receiptNumber}</span>`:''}
         ${isAlert?`<span class="badge badge-yellow" style="font-size:10px;margin-left:4px;">⚠️ 回答期限間近</span>`:''}
