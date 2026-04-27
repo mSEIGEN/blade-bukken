@@ -1,0 +1,1853 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BLADE 物件管理リスト</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=Inter:wght@400;600;700&display=swap');
+  :root {
+    --bg:#f0f4f8;--surface:#fff;--surface2:#f8fafc;--border:#e2e8f0;--border2:#cbd5e1;
+    --accent:#2563eb;--accent-light:#eff6ff;--accent2:#059669;--accent2-light:#ecfdf5;
+    --accent3:#d97706;--accent3-light:#fffbeb;--danger:#dc2626;--danger-light:#fef2f2;
+    --purple:#7c3aed;--purple-light:#f5f3ff;--text:#1e293b;--text2:#64748b;--text3:#94a3b8;
+    --shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;}
+
+  .header{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:60px;position:sticky;top:0;z-index:100;box-shadow:var(--shadow);}
+  .headerLogo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:16px;}
+  .logoIcon{width:34px;height:34px;background:linear-gradient(135deg,#2563eb,#7c3aed);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px;}
+  .userBadge{font-size:13px;color:var(--text2);background:var(--surface2);padding:5px 12px;border-radius:20px;border:1px solid var(--border);}
+
+  .tabBar{background:var(--surface);border-bottom:1px solid var(--border);padding:0 24px;display:flex;gap:4px;}
+  .tab{padding:14px 22px;background:transparent;border:none;border-bottom:3px solid transparent;color:var(--text2);font-size:14px;font-family:inherit;font-weight:500;cursor:pointer;transition:all 0.2s;}
+  .tab.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700;}
+  .tab:hover:not(.active){color:var(--text);background:var(--surface2);}
+
+  .main{padding:24px;max-width:1400px;margin:0 auto;}
+
+  .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;margin-bottom:22px;}
+  .statCard{background:var(--surface);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow);border:1px solid var(--border);display:flex;align-items:center;gap:14px;}
+  .statIcon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+  .statCard.blue .statIcon{background:var(--accent-light);}
+  .statCard.green .statIcon{background:var(--accent2-light);}
+  .statCard.yellow .statIcon{background:var(--accent3-light);}
+  .statCard.purple .statIcon{background:var(--purple-light);}
+  .statInfo .label{font-size:11px;color:var(--text2);margin-bottom:2px;}
+  .statInfo .value{font-size:24px;font-weight:700;font-family:'Inter',sans-serif;line-height:1;}
+  .statCard.blue .value{color:var(--accent);}
+  .statCard.green .value{color:var(--accent2);}
+  .statCard.yellow .value{color:var(--accent3);}
+  .statCard.purple .value{color:var(--purple);}
+
+  .toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+  .toolbarLeft{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .searchInput{padding:9px 14px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit;outline:none;width:190px;transition:border-color 0.2s;}
+  .searchInput:focus{border-color:var(--accent);}
+  .filterSelect{padding:9px 12px;background:var(--surface);border:1.5px solid var(--border);border-radius:10px;color:var(--text);font-size:13px;font-family:inherit;outline:none;cursor:pointer;}
+  .addBtn{padding:9px 20px;background:linear-gradient(135deg,#2563eb,#4f46e5);border:none;border-radius:10px;color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,0.25);transition:opacity 0.2s;white-space:nowrap;}
+  .addBtn:hover{opacity:0.88;}
+
+  .tableWrap{overflow-x:auto;border-radius:14px;border:1px solid var(--border);box-shadow:var(--shadow);background:var(--surface);}
+  table{width:100%;border-collapse:collapse;}
+  thead{background:var(--surface2);}
+  th{padding:11px 13px;text-align:left;font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.8px;white-space:nowrap;border-bottom:1px solid var(--border);}
+  td{padding:11px 13px;border-bottom:1px solid var(--border);font-size:13px;vertical-align:middle;white-space:nowrap;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#f8faff;}
+
+  .badge{display:inline-block;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap;}
+  .badge-blue{background:var(--accent-light);color:#1d4ed8;}
+  .badge-green{background:var(--accent2-light);color:#065f46;}
+  .badge-yellow{background:var(--accent3-light);color:#92400e;}
+  .badge-red{background:var(--danger-light);color:#991b1b;}
+  .badge-gray{background:#f1f5f9;color:#475569;}
+  .badge-purple{background:var(--purple-light);color:#5b21b6;}
+  .badge-orange{background:#fff7ed;color:#c2410c;}
+  .badge-teal{background:#f0fdfa;color:#0f766e;}
+
+  .actionBtns{display:flex;gap:5px;flex-wrap:nowrap;align-items:center;}
+
+  /* 資料列 */
+  .shryoCol{display:flex;gap:4px;align-items:center;}
+  .shryoBtn{width:30px;height:28px;border-radius:7px;border:1.5px solid transparent;background:transparent;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.15s;flex-shrink:0;}
+  .shryoBtn.map{border-color:#a7f3d0;color:var(--accent2);background:var(--accent2-light);}
+  .shryoBtn.map:hover{background:#d1fae5;}
+  .shryoBtn.dropbox{border-color:#bfdbfe;color:var(--accent);background:var(--accent-light);}
+  .shryoBtn.dropbox:hover{background:#dbeafe;}
+  .shryoBtn.detail{border-color:var(--border);color:var(--text2);background:var(--surface2);font-size:11px;width:36px;}
+  .shryoBtn.detail:hover{background:#e2e8f0;}
+  .shryoBtn.empty{border-color:transparent;background:transparent;cursor:default;pointer-events:none;opacity:0;}
+
+  /* 公開状況コンパクト */
+  .visibleCount{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;font-size:12px;color:#065f46;font-weight:600;cursor:pointer;white-space:nowrap;}
+  .visibleCount:hover{background:#d1fae5;}
+  .hiddenCount{display:inline-flex;align-items:center;gap:4px;padding:3px 10px;background:#f1f5f9;border:1px solid var(--border);border-radius:12px;font-size:12px;color:#475569;font-weight:600;white-space:nowrap;}
+  .iconBtn{padding:5px 9px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-size:11px;cursor:pointer;font-family:inherit;transition:all 0.15s;white-space:nowrap;font-weight:500;}
+  .iconBtn.map{border-color:#a7f3d0;color:var(--accent2);background:var(--accent2-light);}
+  .iconBtn.map:hover{background:#d1fae5;}
+  .iconBtn.dropbox{border-color:#bfdbfe;color:var(--accent);background:var(--accent-light);}
+  .iconBtn.dropbox:hover{background:#dbeafe;}
+  .iconBtn.edit{border-color:#fde68a;color:#b45309;background:var(--accent3-light);}
+  .iconBtn.edit:hover{background:#fef3c7;}
+  .iconBtn.delete{border-color:#fecaca;color:var(--danger);background:var(--danger-light);}
+  .iconBtn.delete:hover{background:#fee2e2;}
+  .iconBtn.share{border-color:#ddd6fe;color:var(--purple);background:var(--purple-light);}
+  .iconBtn.share:hover{background:#ede9fe;}
+  .iconBtn.detail{border-color:#e2e8f0;color:var(--text2);background:var(--surface2);}
+  .iconBtn.detail:hover{background:#e2e8f0;}
+
+  .linkedTag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:var(--purple-light);border:1px solid #ddd6fe;border-radius:12px;font-size:11px;color:var(--purple);font-weight:600;}
+  .visibleTag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:12px;font-size:11px;color:#065f46;font-weight:600;white-space:normal;margin-bottom:2px;}
+  .hiddenTag{display:inline-flex;align-items:center;gap:4px;padding:3px 9px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:12px;font-size:11px;color:#475569;font-weight:600;}
+
+  /* MODAL */
+  .modalOverlay{display:none;position:fixed;inset:0;background:rgba(15,23,42,0.4);backdrop-filter:blur(4px);z-index:200;align-items:center;justify-content:center;padding:16px;}
+  #landPickerModal,#powerPickerModal{z-index:300;}
+  .modalOverlay.active{display:flex;}
+  .modal{background:var(--surface);border-radius:20px;padding:32px;width:100%;max-width:620px;max-height:90vh;overflow-y:auto;box-shadow:0 25px 60px rgba(0,0,0,0.15);}
+  .modal.wide{max-width:480px;}
+  .modalHeader{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+  .modalTitle{font-size:18px;font-weight:700;}
+  .closeBtn{width:34px;height:34px;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;color:var(--text2);font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;transition:all 0.2s;}
+  .closeBtn:hover{background:var(--danger-light);color:var(--danger);border-color:#fecaca;}
+  .formRow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+  .formRow.full{grid-template-columns:1fr;}
+  .formRow.three{grid-template-columns:1fr 1fr 1fr;}
+  .formGroup2 label{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:600;}
+  .formGroup2 input,.formGroup2 select,.formGroup2 textarea{width:100%;padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:inherit;outline:none;transition:border-color 0.2s;}
+  .formGroup2 input:focus,.formGroup2 select:focus,.formGroup2 textarea:focus{border-color:var(--accent);background:white;}
+  .formGroup2 textarea{resize:vertical;min-height:72px;}
+  .sectionDivider{font-size:11px;font-weight:700;color:var(--accent);text-transform:uppercase;letter-spacing:1px;margin:18px 0 12px;padding-bottom:6px;border-bottom:2px solid var(--accent-light);}
+  .modalFooter{display:flex;gap:10px;justify-content:flex-end;margin-top:24px;padding-top:20px;border-top:1px solid var(--border);}
+  .cancelBtn{padding:10px 22px;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;color:var(--text2);font-size:13px;font-family:inherit;cursor:pointer;font-weight:600;}
+  .saveBtn{padding:10px 28px;background:linear-gradient(135deg,#2563eb,#4f46e5);border:none;border-radius:9px;color:white;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,0.25);}
+  .calcHint{font-size:11px;color:var(--accent2);margin-top:4px;}
+
+  /* 詳細モーダル */
+  .detailGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:8px;}
+  .detailItem{background:var(--surface2);border-radius:10px;padding:12px 14px;}
+  .detailItem .dlabel{font-size:11px;color:var(--text2);font-weight:600;margin-bottom:4px;}
+  .detailItem .dvalue{font-size:13px;color:var(--text);font-weight:500;}
+  .detailItem.full{grid-column:1/-1;}
+
+  /* 公開設定 */
+  .shareList{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+  .shareItem{display:flex;align-items:center;justify-content:space-between;padding:12px 16px;background:var(--surface2);border-radius:10px;border:1px solid var(--border);}
+  .shareToggle{padding:6px 16px;border-radius:8px;border:none;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;}
+  .shareToggle.on{background:var(--accent2-light);color:#065f46;border:1.5px solid #a7f3d0;}
+  .shareToggle.off{background:#f1f5f9;color:#475569;border:1.5px solid var(--border);}
+
+  .emptyState{text-align:center;padding:60px 20px;}
+
+  /* タグ選択ボタン */
+  .tagSelector{display:flex;flex-wrap:wrap;gap:6px;margin-top:4px;}
+  .tagBtn{padding:6px 14px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;}
+  .tagBtn:hover{border-color:var(--border2);color:var(--text);}
+  .tagBtn.selected{border-color:var(--accent);background:var(--accent-light);color:var(--accent);}
+  .tagBtn.selected.bess{border-color:#7c3aed;background:#f5f3ff;color:#7c3aed;}
+  .tagBtn.selected.pv{border-color:#d97706;background:#fffbeb;color:#d97706;}
+  .tagBtn.selected.wp{border-color:#0891b2;background:#ecfeff;color:#0891b2;}
+  .tagBtn.selected.tokko{border-color:#7c3aed;background:#f5f3ff;color:#7c3aed;}
+  .tagBtn.selected.kouatsu{border-color:#d97706;background:#fff7ed;color:#d97706;}
+  .tagBtn.selected.teiatu{border-color:#0891b2;background:#ecfeff;color:#0891b2;}
+  .tagBtn.selected.jisha{border-color:#059669;background:#ecfdf5;color:#059669;}
+  .tagBtn.selected.daiko{border-color:#2563eb;background:#eff6ff;color:#2563eb;}
+
+  /* 自社/申請代行フィルターボタン */
+  .dealFilterBtns{display:flex;gap:6px;}
+  .dealFilterBtn{padding:7px 16px;border-radius:9px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;}
+  .dealFilterBtn.active{border-color:var(--accent);background:var(--accent-light);color:var(--accent);}
+  .dealFilterBtn:hover:not(.active){background:var(--surface2);}
+
+  /* 申請タイプバッジ */
+  .badge-deal-jisha{background:#ecfdf5;color:#065f46;}
+  .badge-deal-daiko{background:#eff6ff;color:#1d4ed8;}
+
+  /* CSSツールチップ */
+  .tooltipWrap{position:relative;display:inline-block;}
+  .tooltipWrap .tooltipText{
+    visibility:hidden;opacity:0;
+    background:var(--text);color:white;
+    font-size:11px;border-radius:6px;
+    padding:6px 10px;white-space:pre;
+    position:absolute;z-index:300;
+    bottom:calc(100% + 6px);left:50%;transform:translateX(-50%);
+    transition:opacity 0.15s;pointer-events:none;
+    box-shadow:0 4px 12px rgba(0,0,0,0.2);
+  }
+  .tooltipWrap:hover .tooltipText{visibility:visible;opacity:1;}
+
+  /* アコーディオンミニテーブル */
+  .miniTable{width:100%;border-collapse:collapse;margin-top:4px;}
+  .miniTable th{padding:6px 10px;font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);white-space:nowrap;background:var(--surface);}
+  .miniTable td{padding:7px 10px;font-size:12px;border-bottom:1px solid rgba(226,232,240,0.5);vertical-align:middle;white-space:nowrap;}
+  .miniTable tr:last-child td{border-bottom:none;}
+  .miniTable tr:hover td{background:rgba(59,130,246,0.04);}
+  .miniEditBtn{padding:3px 10px;border-radius:6px;border:1.5px solid #fde68a;background:#fffbeb;color:#b45309;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit;transition:all 0.15s;}
+  .miniEditBtn:hover{background:#fef3c7;}
+  .miniShryoCol{display:flex;gap:3px;align-items:center;}
+  .miniShryoBtn{width:24px;height:22px;border-radius:5px;border:1.5px solid transparent;background:transparent;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .miniShryoBtn.map{border-color:#a7f3d0;color:var(--accent2);background:var(--accent2-light);}
+  .miniShryoBtn.dropbox{border-color:#bfdbfe;color:var(--accent);background:var(--accent-light);}
+  .miniShryoBtn.empty{opacity:0;pointer-events:none;}
+
+  /* 条件検索パネル */
+  .filterPanel{background:var(--surface);border:1.5px solid var(--border);border-radius:12px;padding:16px 18px;margin-bottom:14px;display:none;}
+  .filterPanel.open{display:block;}
+  .filterPanelGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;align-items:end;}
+  .filterPanelItem label{display:block;font-size:11px;font-weight:700;color:var(--text2);margin-bottom:5px;text-transform:uppercase;letter-spacing:0.5px;}
+  .filterPanelItem input,.filterPanelItem select{width:100%;padding:8px 10px;background:var(--surface2);border:1.5px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:inherit;outline:none;}
+  .filterPanelItem input:focus,.filterPanelItem select:focus{border-color:var(--accent);}
+  .filterRangeRow{display:flex;align-items:center;gap:6px;}
+  .filterRangeRow input{flex:1;}
+  .filterRangeRow span{color:var(--text3);font-size:12px;white-space:nowrap;}
+  .filterBtn{padding:8px 14px;border:1.5px solid var(--border);border-radius:9px;background:var(--surface);color:var(--text2);font-size:13px;font-family:inherit;cursor:pointer;font-weight:600;transition:all 0.2s;white-space:nowrap;}
+  .filterBtn.active{border-color:var(--accent);color:var(--accent);background:var(--accent-light);}
+  .filterBtn:hover{border-color:var(--border2);color:var(--text);}
+  .clearBtn{padding:8px 14px;border:1.5px solid #fecaca;border-radius:9px;background:var(--danger-light);color:var(--danger);font-size:13px;font-family:inherit;cursor:pointer;font-weight:600;white-space:nowrap;}
+
+  /* 3点メニュー */
+  .menuWrap{position:relative;display:inline-block;}
+  .menuBtn{padding:5px 9px;border-radius:7px;border:1.5px solid var(--border);background:var(--surface);color:var(--text2);font-size:16px;cursor:pointer;font-family:inherit;transition:all 0.15s;line-height:1;}
+  .menuBtn:hover{background:var(--surface2);color:var(--text);}
+  .menuDropdown{display:none;position:absolute;right:0;top:100%;margin-top:4px;background:var(--surface);border:1.5px solid var(--border);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.12);min-width:140px;z-index:150;overflow:hidden;}
+  .menuDropdown.open{display:block;}
+  .menuItem{display:flex;align-items:center;gap:8px;padding:10px 14px;font-size:13px;cursor:pointer;transition:background 0.15s;color:var(--text);border:none;background:transparent;width:100%;font-family:inherit;text-align:left;}
+  .menuItem:hover{background:var(--surface2);}
+  .menuItem.danger{color:var(--danger);}
+  .menuItem.danger:hover{background:var(--danger-light);}
+
+  /* アコーディオン */
+  .accordionRow td{border-bottom:none !important;}
+  .accordionPanel{background:#f8faff;border-bottom:1px solid var(--border);}
+  .accordionContent{padding:12px 16px;display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+  .accordionLabel{font-size:11px;font-weight:700;color:var(--text2);margin-right:4px;}
+  .accordionTag{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;transition:opacity 0.15s;}
+  .accordionTag:hover{opacity:0.75;}
+  .accordionTag.land{background:var(--purple-light);border:1px solid #ddd6fe;color:var(--purple);}
+  .accordionTag.power{background:var(--accent-light);border:1px solid #bfdbfe;color:var(--accent);}
+  .expandBtn{background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;padding:2px 4px;transition:transform 0.2s;}
+  .expandBtn.open{transform:rotate(180deg);}
+
+  /* ソート可能ヘッダー */
+  .sortable{cursor:pointer;user-select:none;}
+  .sortable:hover{color:var(--accent);}
+
+  /* 土地選択モーダル */
+  .landPickerList{max-height:320px;overflow-y:auto;border:1.5px solid var(--border);border-radius:10px;margin-top:8px;}
+  .landPickerItem{display:flex;align-items:center;gap:10px;padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.15s;}
+  .landPickerItem:last-child{border-bottom:none;}
+  .landPickerItem:hover{background:var(--surface2);}
+  .landPickerItem.checked{background:var(--accent-light);}
+  .landPickerItem input[type=checkbox]{width:16px;height:16px;cursor:pointer;accent-color:var(--accent);}
+  .landPickerSearch{width:100%;padding:9px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;font-size:13px;font-family:inherit;outline:none;margin-bottom:8px;}
+  .landPickerSearch:focus{border-color:var(--accent);}
+  .selectedLands{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;min-height:24px;}
+  .clickableTag{cursor:pointer;transition:opacity 0.15s;}
+  .clickableTag:hover{opacity:0.75;}
+  .emptyState .emptyIcon{font-size:48px;margin-bottom:12px;}
+  .emptyState p{font-size:14px;color:var(--text2);}
+
+  /* 電源種別によって表示切替 */
+  .bess-only{display:none;}
+  .pv-wp-only{display:none;}
+
+  @media(max-width:640px){
+    .header{padding:0 16px;}
+    .tabBar{padding:0 16px;overflow-x:auto;}
+    .main{padding:16px;}
+    .formRow,.formRow.three{grid-template-columns:1fr;}
+    .searchInput{width:140px;}
+    .modal{padding:22px;}
+    .stats{grid-template-columns:repeat(2,1fr);}
+    .detailGrid{grid-template-columns:1fr;}
+  }
+</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<style>
+  tr.sortable-ghost{opacity:0.4;background:#eff6ff;}
+  tr.sortable-chosen{background:#f8faff;}
+  tr.accordionRow td:first-child{display:flex;align-items:center;gap:4px;}
+</style>
+</head>
+<body>
+
+<!-- LOADING -->
+<div id="loadingOverlay" style="display:none;position:fixed;inset:0;background:rgba(255,255,255,0.85);backdrop-filter:blur(4px);z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:12px;">
+  <div style="width:40px;height:40px;border:3px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+  <div id="loadingMsg" style="font-size:14px;color:#64748b;font-weight:500;">読み込み中...</div>
+</div>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+
+<div id="app">
+  <div class="header">
+    <div class="headerLogo">
+      <div class="logoIcon">⚡</div>
+      <span>BLADE 物件管理リスト</span>
+    </div>
+    <span class="userBadge" id="userBadge">読み込み中...</span>
+  </div>
+
+  <div class="tabBar">
+    <button class="tab active" onclick="switchTab('land',this)">🌍 土地一覧</button>
+    <button class="tab" onclick="switchTab('power',this)">⚡ 電力申請一覧</button>
+  </div>
+
+  <div class="main">
+    <!-- LAND TAB -->
+    <div id="tab-land">
+      <div class="stats" id="landStats"></div>
+      <div class="toolbar">
+        <div class="toolbarLeft">
+          <input class="searchInput" type="text" placeholder="🔍 所在地・地番で検索" oninput="renderLand()">
+          <button class="filterBtn" id="landFilterBtn" onclick="toggleFilterPanel('land')">条件検索 ▼</button>
+          <button class="clearBtn" onclick="clearLandFilter()" style="display:none" id="landClearBtn">✕ 解除</button>
+        </div>
+        <button class="addBtn admin-only" onclick="openLandModal()">＋ 土地を追加</button>
+      </div>
+      <div class="filterPanel" id="landFilterPanel">
+        <div class="filterPanelGrid">
+          <div class="filterPanelItem">
+            <label>ステータス</label>
+            <select id="lf_status" onchange="renderLand();updateClearBtn('land')">
+              <option value="">すべて</option>
+              <option>交渉中</option><option>契約済み</option><option>取得済み</option><option>見送り</option>
+            </select>
+          </div>
+          <div class="filterPanelItem">
+            <label>地目</label>
+            <select id="lf_category" onchange="renderLand();updateClearBtn('land')">
+              <option value="">すべて</option>
+              <option>田</option><option>畑</option><option>宅地</option><option>山林</option><option>原野</option><option>雑種地</option><option>その他</option>
+            </select>
+          </div>
+          <div class="filterPanelItem">
+            <label>都道府県</label>
+            <select id="lf_pref" onchange="renderLand();updateClearBtn('land')">
+              <option value="">すべて</option>
+            </select>
+          </div>
+          <div class="filterPanelItem">
+            <label>面積（㎡）</label>
+            <div class="filterRangeRow">
+              <input type="number" id="lf_areaMin" placeholder="最小" oninput="renderLand();updateClearBtn('land')">
+              <span>〜</span>
+              <input type="number" id="lf_areaMax" placeholder="最大" oninput="renderLand();updateClearBtn('land')">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="tableWrap">
+        <table>
+          <thead><tr>
+            <th class="sortable" onclick="sortLand('address')">所在地・地番 <span id="lsort_address"></span></th><th class="sortable" onclick="sortLand('area')">面積 <span id="lsort_area"></span></th><th>地目</th><th>地主・仲介</th><th class="sortable" onclick="sortLand('status')">ステータス <span id="lsort_status"></span></th><th>電力申請</th><th class="sortable" onclick="sortLand('visibleTo')">公開状況 <span id="lsort_visibleTo"></span></th><th>資料</th><th>操作</th>
+          </tr></thead>
+          <tbody id="landBody" class="sortable-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- POWER TAB -->
+    <div id="tab-power" style="display:none">
+      <div id="alertBanner" style="display:none;background:#fffbeb;border:1.5px solid #fde68a;border-radius:12px;padding:12px 16px;margin-bottom:16px;font-size:13px;color:#92400e;">
+        ⚠️ <strong>回答期限が1週間以内の案件があります</strong>
+        <span id="alertList"></span>
+      </div>
+      <div class="stats" id="powerStats"></div>
+      <div class="toolbar">
+        <div class="toolbarLeft">
+          <input class="searchInput" type="text" placeholder="🔍 物件名・事業者名で検索" oninput="renderPower()">
+          <button class="filterBtn" id="powerFilterBtn" onclick="toggleFilterPanel('power')">条件検索 ▼</button>
+          <button class="clearBtn" onclick="clearPowerFilter()" style="display:none" id="powerClearBtn">✕ 解除</button>
+          <div class="dealFilterBtns admin-only">
+            <button class="dealFilterBtn active" id="deal_all" onclick="setDealFilter('')">すべて</button>
+            <button class="dealFilterBtn" id="deal_jisha" onclick="setDealFilter('自社')">🏠 自社</button>
+            <button class="dealFilterBtn" id="deal_daiko" onclick="setDealFilter('申請代行')">🏢 申請代行</button>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="addBtn admin-only" style="background:linear-gradient(135deg,#059669,#047857)" onclick="exportCSV()">📥 CSV</button>
+          <button class="addBtn admin-only" onclick="openPowerModal()">＋ 申請を追加</button>
+        </div>
+      </div>
+      <div class="filterPanel" id="powerFilterPanel">
+        <div class="filterPanelGrid">
+          <div class="filterPanelItem">
+            <label>ステータス</label>
+            <select id="pf_status" onchange="renderPower();updateClearBtn('power')">
+              <option value="">すべて</option>
+              <option>検討中</option><option>作成中</option><option>申込進行中</option><option>検討料支払い待ち</option><option>受付</option><option>回答済</option><option>契約済</option><option>停止中</option><option>不採択</option>
+            </select>
+          </div>
+          <div class="filterPanelItem">
+            <label>電源種別</label>
+            <select id="pf_sourceType" onchange="renderPower();updateClearBtn('power')">
+              <option value="">すべて</option>
+              <option>PV</option><option>BESS</option><option>WP</option>
+            </select>
+          </div>
+          <div class="filterPanelItem">
+            <label>電力会社</label>
+            <select id="pf_company" onchange="renderPower();updateClearBtn('power')">
+              <option value="">すべて</option>
+              <option>東京電力</option><option>関西電力</option><option>中部電力</option><option>東北電力</option><option>九州電力</option><option>中国電力</option><option>四国電力</option><option>北海道電力</option><option>北陸電力</option><option>沖縄電力</option>
+            </select>
+          </div>
+          <div class="filterPanelItem">
+            <label>都道府県</label>
+            <select id="pf_pref" onchange="renderPower();updateClearBtn('power')">
+              <option value="">すべて</option>
+            </select>
+          </div>
+          <div class="filterPanelItem">
+            <label>電圧区分</label>
+            <select id="pf_voltage" onchange="renderPower();updateClearBtn('power')">
+              <option value="">すべて</option>
+              <option>特別高圧</option><option>高圧</option><option>低圧</option>
+            </select>
+          </div>
+          <div class="filterPanelItem">
+            <label>申請タイプ</label>
+            <select id="pf_dealType" onchange="renderPower();updateClearBtn('power')">
+              <option value="">すべて</option>
+              <option>自社</option><option>申請代行</option>
+            </select>
+          </div>
+          <div class="filterPanelItem">
+            <label>回答期限</label>
+            <select id="pf_deadline" onchange="renderPower();updateClearBtn('power')">
+              <option value="">すべて</option>
+              <option value="7">1週間以内</option>
+              <option value="30">1ヶ月以内</option>
+              <option value="90">3ヶ月以内</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="tableWrap">
+        <table>
+          <thead><tr>
+            <th class="sortable" onclick="sortPower('name')">物件名 <span id="psort_name"></span></th><th class="sortable" onclick="sortPower('businessName')">事業者名 <span id="psort_businessName"></span></th><th class="sortable" onclick="sortPower('voltage')">電力会社 <span id="psort_voltage"></span></th><th>容量</th><th class="sortable" onclick="sortPower('ansdate')">回答日 <span id="psort_ansdate"></span></th><th class="sortable" onclick="sortPower('status')">ステータス <span id="psort_status"></span></th><th class="sortable" onclick="sortPower('visibleTo')">公開状況 <span id="psort_visibleTo"></span></th><th>資料</th><th>操作</th>
+          </tr></thead>
+          <tbody id="powerBody" class="sortable-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- LAND MODAL -->
+<div class="modalOverlay" id="landModal">
+  <div class="modal">
+    <div class="modalHeader">
+      <div class="modalTitle" id="landModalTitle">🌍 土地を追加</div>
+      <button class="closeBtn" onclick="closeModal('landModal')">×</button>
+    </div>
+    <div class="sectionDivider">基本情報</div>
+    <div class="formRow">
+      <div class="formGroup2"><label>物件名 *</label><input type="text" id="l_name" placeholder="例：○○市△△案件"></div>
+      <div class="formGroup2"><label>ステータス</label><select id="l_status"><option>交渉中</option><option>契約済み</option><option>取得済み</option><option>見送り</option></select></div>
+    </div>
+    <div class="formRow full"><div class="formGroup2"><label>所在地・地番</label><input type="text" id="l_address" placeholder="例：東京都○○市△△1-2-3"></div></div>
+    <div class="formRow">
+      <div class="formGroup2"><label>面積 (㎡)</label><input type="text" id="l_area" placeholder="例：5,000" onblur="fmtAreaInput(this)" onfocus="unFmtAreaInput(this)"></div>
+      <div class="formGroup2"><label>地目</label><select id="l_landCategory"><option value="">選択してください</option><option>田</option><option>畑</option><option>宅地</option><option>山林</option><option>原野</option><option>雑種地</option><option>その他</option></select></div>
+    </div>
+    <div class="formRow full"><div class="formGroup2"><label>地主・仲介業者</label><input type="text" id="l_owner" placeholder="例：田中様 / ○○不動産"></div></div>
+    <div class="formRow full"><div class="formGroup2"><label>担当者</label><input type="text" id="l_person" placeholder="例：鈴木"></div></div>
+    <div class="sectionDivider">電力申請紐付け・座標・リンク</div>
+    <div class="formRow full">
+      <div class="formGroup2">
+        <label>⚡ 電力申請紐付け（任意）</label>
+        <div class="selectedLands" id="selectedPowersDisplay"></div>
+        <button type="button" onclick="openPowerPicker()" style="margin-top:8px;padding:7px 14px;border:1.5px solid var(--accent);border-radius:8px;background:var(--accent-light);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">＋ 電力申請を選択</button>
+      </div>
+    </div>
+    <div class="formRow full"><div class="formGroup2"><label>📍 座標（緯度, 経度）</label><input type="text" id="l_coordinates" placeholder="例：35.6663, 139.7043"></div></div>
+    <div class="formRow full"><div class="formGroup2"><label>📁 Dropboxリンク</label><input type="url" id="l_dropbox" placeholder="https://www.dropbox.com/sh/..."></div></div>
+    <div class="formRow full"><div class="formGroup2"><label>備考</label><textarea id="l_note" placeholder="特記事項・メモなど"></textarea></div></div>
+    <div class="modalFooter">
+      <button class="cancelBtn" onclick="closeModal('landModal')">キャンセル</button>
+      <button class="cancelBtn" id="landDuplicateBtn" style="display:none;background:var(--purple-light);color:var(--purple);border-color:#ddd6fe" onclick="duplicateLand()">📋 複製して保存</button>
+      <button class="saveBtn" onclick="saveLand()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- POWER MODAL -->
+<div class="modalOverlay" id="powerModal">
+  <div class="modal">
+    <div class="modalHeader">
+      <div class="modalTitle" id="powerModalTitle">⚡ 電力申請を追加</div>
+      <button class="closeBtn" onclick="closeModal('powerModal')">×</button>
+    </div>
+    <div class="sectionDivider">基本情報</div>
+    <div class="formRow">
+      <div class="formGroup2"><label>物件名 *</label><input type="text" id="p_name" placeholder="例：○○変電所 蓄電池案件"></div>
+      <div class="formGroup2"><label>事業者名</label><input type="text" id="p_businessName" placeholder="例：○○エナジー株式会社"></div>
+    </div>
+    <div class="formRow full"><div class="formGroup2"><label>📌 代表地番</label><input type="text" id="p_siteAddress" placeholder="例：秋田県大館市比内町1-1"></div></div>
+    <div class="formRow full"><div class="formGroup2"><label>ステータス</label><select id="p_status"><option>検討中</option><option>作成中</option><option>申込進行中</option><option>検討料支払い待ち</option><option>受付</option><option>回答済</option><option>契約済</option><option>停止中</option><option>不採択</option></select></div></div>
+    <div class="sectionDivider">電力情報</div>
+    <div class="formRow">
+      <div class="formGroup2"><label>電力会社</label><select id="p_company"><option>東京電力</option><option>関西電力</option><option>中部電力</option><option>東北電力</option><option>九州電力</option><option>中国電力</option><option>四国電力</option><option>北海道電力</option><option>北陸電力</option><option>沖縄電力</option></select></div>
+      <div class="formGroup2">
+        <label>電圧区分</label>
+        <input type="hidden" id="p_voltage">
+        <div class="tagSelector">
+          <button type="button" class="tagBtn tokko" onclick="selectTag('p_voltage','特別高圧 66kV',this,'tokko')">⚡ 特高66kV</button>
+          <button type="button" class="tagBtn kouatsu" onclick="selectTag('p_voltage','高圧 6.6kV',this,'kouatsu')">🔶 高圧6.6kV</button>
+          <button type="button" class="tagBtn teiatu" onclick="selectTag('p_voltage','低圧',this,'teiatu')">🔵 低圧</button>
+        </div>
+      </div>
+    </div>
+    <div class="formRow">
+      <div class="formGroup2"><label>申請種別</label><select id="p_type" onchange="onTypeChange()"><option>接続検討</option><option>系統連系申込</option><option>系統連系申込（低圧）</option></select></div>
+      <div class="formGroup2">
+        <label>電源種別</label>
+        <input type="hidden" id="p_sourceType">
+        <div class="tagSelector">
+          <button type="button" class="tagBtn pv" onclick="selectTag('p_sourceType','PV',this,'pv');onSourceTypeChange()">☀️ PV</button>
+          <button type="button" class="tagBtn bess" onclick="selectTag('p_sourceType','BESS',this,'bess');onSourceTypeChange()">🔋 BESS</button>
+          <button type="button" class="tagBtn wp" onclick="selectTag('p_sourceType','WP',this,'wp');onSourceTypeChange()">🌬️ WP</button>
+        </div>
+      </div>
+    </div>
+    <div id="pvwpFields" style="display:none">
+      <div class="sectionDivider">容量情報（PV/WP）</div>
+      <div class="formRow">
+        <div class="formGroup2"><label>出力容量 (kW)</label><input type="text" id="p_kw" placeholder="例：2,000" onblur="fmtNumInput(this)" onfocus="unFmtNumInput(this)"></div>
+        <div class="formGroup2"><label>設備容量 (kWh)</label><input type="text" id="p_kwh" placeholder="例：8,000" onblur="fmtNumInput(this)" onfocus="unFmtNumInput(this)"></div>
+      </div>
+    </div>
+    <div id="bessFields" style="display:none">
+      <div class="sectionDivider">容量情報（BESS）</div>
+      <div class="formRow">
+        <div class="formGroup2"><label>出力容量 放電側 (kW)</label><input type="text" id="p_kw_discharge" placeholder="例：2,000" onblur="fmtNumInput(this)" onfocus="unFmtNumInput(this)"></div>
+        <div class="formGroup2"><label>出力容量 充電側 (kW)</label><input type="text" id="p_kw_charge" placeholder="例：2,000" onblur="fmtNumInput(this)" onfocus="unFmtNumInput(this)"></div>
+      </div>
+      <div class="formRow">
+        <div class="formGroup2"><label>蓄電池容量 (kWh)</label><input type="text" id="p_kwh_bess" placeholder="例：8,000" onblur="fmtNumInput(this)" onfocus="unFmtNumInput(this)"></div>
+        <div class="formGroup2"></div>
+      </div>
+    </div>
+    <div class="sectionDivider">申請タイプ・詳細</div>
+    <div class="formRow full">
+      <div class="formGroup2">
+        <label>申請タイプ</label>
+        <input type="hidden" id="p_dealType">
+        <div class="tagSelector">
+          <button type="button" class="tagBtn jisha" onclick="selectTag('p_dealType','自社',this,'jisha')">🏠 自社</button>
+          <button type="button" class="tagBtn daiko" onclick="selectTag('p_dealType','申請代行',this,'daiko')">🏢 申請代行</button>
+        </div>
+      </div>
+    </div>
+    <div class="formRow">
+      <div class="formGroup2"><label>回答日</label><input type="date" id="p_ansdate"></div>
+      <div class="formGroup2"><label>工事費負担金（円）</label><input type="text" id="p_cost" placeholder="例：12,500,000" oninput="calcGuarantee()" onblur="fmtNumInput(this)" onfocus="unFmtNumInput(this)"></div>
+    </div>
+    <div class="formRow">
+      <div class="formGroup2">
+        <label>保証金額（円）<span style="font-size:10px;color:var(--accent2);margin-left:4px;">自動計算(5%)</span></label>
+        <input type="text" id="p_guaranteeAmount" placeholder="自動計算されます" onblur="fmtNumInput(this)" onfocus="unFmtNumInput(this)">
+        <div class="calcHint" id="calcHint"></div>
+      </div>
+      <div class="formGroup2"><label>保証金ステータス</label>
+        <select id="p_guaranteeStatus"><option value="">―</option><option>未納</option><option>納付済み</option><option>返還済み</option></select>
+      </div>
+    </div>
+    <div class="sectionDivider">受付情報</div>
+    <div class="formRow">
+      <div class="formGroup2"><label>受付番号</label><input type="text" id="p_receiptNumber" placeholder="例：2024-12345"></div>
+      <div class="formGroup2" id="supplyNumberField" style="display:none"><label>供給番号（低圧）</label><input type="text" id="p_supplyNumber" placeholder="例：ABC-123456"></div>
+    </div>
+    <div class="sectionDivider">座標・土地紐付け・リンク</div>
+    <div class="formRow full"><div class="formGroup2"><label>📍 座標（緯度, 経度）</label><input type="text" id="p_coordinates" placeholder="例：35.6663, 139.7043"></div></div>
+    <div class="formRow full">
+      <div class="formGroup2">
+        <label>🌍 土地紐付け（任意）</label>
+        <div class="selectedLands" id="selectedLandsDisplay"></div>
+        <button type="button" onclick="openLandPicker()" style="margin-top:8px;padding:7px 14px;border:1.5px solid var(--accent);border-radius:8px;background:var(--accent-light);color:var(--accent);font-size:12px;font-weight:600;cursor:pointer;font-family:inherit;">＋ 土地を選択</button>
+      </div>
+    </div>
+    <div class="formRow full"><div class="formGroup2"><label>📁 Dropboxリンク</label><input type="url" id="p_dropbox" placeholder="https://www.dropbox.com/sh/..."></div></div>
+    <div class="formRow full"><div class="formGroup2"><label>備考</label><textarea id="p_note" placeholder="特記事項・メモなど"></textarea></div></div>
+    <div class="modalFooter">
+      <button class="cancelBtn" onclick="closeModal('powerModal')">キャンセル</button>
+      <button class="cancelBtn" id="powerDuplicateBtn" style="display:none;background:var(--purple-light);color:var(--purple);border-color:#ddd6fe" onclick="duplicatePower()">📋 複製して保存</button>
+      <button class="saveBtn" onclick="savePower()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 詳細モーダル -->
+<div class="modalOverlay" id="detailModal">
+  <div class="modal" style="max-width:520px;">
+    <div class="modalHeader">
+      <div class="modalTitle" id="detailModalTitle">詳細情報</div>
+      <button class="closeBtn" onclick="closeModal('detailModal')">×</button>
+    </div>
+    <div id="detailContent"></div>
+    <div class="modalFooter">
+      <button class="cancelBtn" onclick="closeModal('detailModal')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- 公開設定モーダル -->
+<div class="modalOverlay" id="shareModal">
+  <div class="modal" style="max-width:440px;">
+    <div class="modalHeader">
+      <div class="modalTitle">🔐 公開設定</div>
+      <button class="closeBtn" onclick="closeModal('shareModal')">×</button>
+    </div>
+    <div id="shareModalName" style="font-size:14px;color:var(--text2);margin-bottom:8px;"></div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:16px;">公開する取引先を選択してください。</div>
+    <div class="shareList" id="shareList"></div>
+    <div class="modalFooter">
+      <button class="cancelBtn" onclick="closeModal('shareModal')">閉じる</button>
+      <button class="saveBtn" onclick="saveShare()">保存する</button>
+    </div>
+  </div>
+</div>
+
+<!-- 土地選択ピッカー -->
+<div class="modalOverlay" id="landPickerModal" style="z-index:400;">
+  <div class="modal" style="max-width:480px;">
+    <div class="modalHeader">
+      <div class="modalTitle">🌍 土地を選択</div>
+      <button class="closeBtn" onclick="closeModal('landPickerModal')">×</button>
+    </div>
+    <input class="landPickerSearch" type="text" placeholder="🔍 土地名・住所で検索..." oninput="filterLandPicker(this.value)">
+    <div style="margin-bottom:8px;font-size:12px;color:var(--text2)">選択中: <span id="landPickerCount">0</span>件</div>
+    <div class="landPickerList" id="landPickerList"></div>
+    <div class="modalFooter">
+      <button class="cancelBtn" onclick="closeModal('landPickerModal')">キャンセル</button>
+      <button class="saveBtn" onclick="confirmLandPicker()">選択を確定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 電力申請選択ピッカー -->
+<div class="modalOverlay" id="powerPickerModal" style="z-index:400;">
+  <div class="modal" style="max-width:480px;">
+    <div class="modalHeader">
+      <div class="modalTitle">⚡ 電力申請を選択</div>
+      <button class="closeBtn" onclick="closeModal('powerPickerModal')">×</button>
+    </div>
+    <input class="landPickerSearch" type="text" placeholder="🔍 申請名で検索..." oninput="filterPowerPicker(this.value)">
+    <div style="margin-bottom:8px;font-size:12px;color:var(--text2)">選択中: <span id="powerPickerCount">0</span>件</div>
+    <div class="landPickerList" id="powerPickerList"></div>
+    <div class="modalFooter">
+      <button class="cancelBtn" onclick="closeModal('powerPickerModal')">キャンセル</button>
+      <button class="saveBtn" onclick="confirmPowerPicker()">選択を確定</button>
+    </div>
+  </div>
+</div>
+
+
+<script>
+const urlParams = new URLSearchParams(window.location.search);
+const API_KEY = urlParams.get('key');
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbxveY43IJR6R4yYIxVd_YSWqtK0nC7oj_iHhPeFy7CuC8fVHq0MtyEYuFKblp7r355y/exec';
+
+let lands=[], powers=[];
+let editLandId=null, editPowerId=null;
+let currentRole='viewer', currentUser=null, clientIds=[];
+let shareTarget=null;
+let selectedLandIds=[], selectedPowerIds=[];
+let navHistory=[]; // ナビゲーション履歴
+
+function showLoading(msg='読み込み中...'){document.getElementById('loadingOverlay').style.display='flex';document.getElementById('loadingMsg').textContent=msg;}
+function hideLoading(){document.getElementById('loadingOverlay').style.display='none';}
+
+async function gasRequest(params){
+  params.key=API_KEY;
+  const url=GAS_URL+'?'+new URLSearchParams(params).toString();
+  const res=await fetch(url);
+  return await res.json();
+}
+
+// ========== キャッシュ管理 ==========
+const CACHE_KEY_LANDS = 'cache_lands';
+const CACHE_KEY_POWERS = 'cache_powers';
+const CACHE_KEY_USER = 'cache_user';
+const CACHE_KEY_LASTKEY = 'lastKey';
+
+function initCache(){
+  // keyが変わったらキャッシュをクリア
+  const lastKey = sessionStorage.getItem(CACHE_KEY_LASTKEY);
+  if(lastKey !== API_KEY){
+    sessionStorage.clear();
+    sessionStorage.setItem(CACHE_KEY_LASTKEY, API_KEY);
+  }
+}
+
+function saveCache(landsData, powersData, userData){
+  try{
+    sessionStorage.setItem(CACHE_KEY_LANDS, JSON.stringify(landsData));
+    sessionStorage.setItem(CACHE_KEY_POWERS, JSON.stringify(powersData));
+    sessionStorage.setItem(CACHE_KEY_USER, JSON.stringify(userData));
+  }catch(e){ /* キャッシュ保存失敗は無視 */ }
+}
+
+function loadCache(){
+  try{
+    const l=sessionStorage.getItem(CACHE_KEY_LANDS);
+    const p=sessionStorage.getItem(CACHE_KEY_POWERS);
+    const u=sessionStorage.getItem(CACHE_KEY_USER);
+    if(l&&p&&u) return {lands:JSON.parse(l),powers:JSON.parse(p),user:JSON.parse(u)};
+  }catch(e){}
+  return null;
+}
+
+async function loadAll(useCache=true){
+  // キャッシュがあれば即表示
+  if(useCache){
+    const cached=loadCache();
+    if(cached){
+      lands=cached.lands;
+      powers=cached.powers;
+      currentUser=cached.user||{};
+      currentRole=currentUser.role||'viewer';
+      document.getElementById('userBadge').textContent=`👤 ${currentUser.name||''}（${currentUser.clientId||''}）`;
+      applyRoleUI();
+      if(currentRole==='admin'){
+        try{const r=await gasRequest({action:'getClients'});clientIds=r.ok?r.clients||[]:[]; }catch(e){clientIds=[];}
+      }
+      hideLoading();
+      // バックグラウンドで最新データを取得
+      loadAll(false).then(()=>{renderLand();renderPower();}).catch(()=>{});
+      return;
+    }
+  }
+  showLoading('データを読み込み中...');
+  try{
+    const [landRes,powerRes]=await Promise.all([
+      gasRequest({action:'getVisibleLand'}),
+      gasRequest({action:'getVisiblePower'}),
+    ]);
+    if(!landRes.ok) throw new Error(landRes.error||'土地データ取得エラー');
+    if(!powerRes.ok) throw new Error(powerRes.error||'電力データ取得エラー');
+    lands=landRes.rows||[];
+    powers=powerRes.rows||[];
+    currentUser=landRes.user||{};
+    currentRole=currentUser.role||'viewer';
+    saveCache(lands, powers, currentUser);
+    document.getElementById('userBadge').textContent=`👤 ${currentUser.name||''}（${currentUser.clientId||''}）`;
+    applyRoleUI();
+    if(currentRole==='admin'){
+      try{const r=await gasRequest({action:'getClients'});clientIds=r.ok?r.clients||[]:[]; }catch(e){clientIds=[];}
+    }
+  }catch(e){console.error('loadAll error:', e);alert('データの読み込みに失敗しました: '+e.message);}
+  hideLoading();
+}
+
+function applyRoleUI(){
+  const isAdmin=currentRole==='admin';
+  document.querySelectorAll('.admin-only').forEach(el=>{el.style.display=isAdmin?'':'none';});
+}
+
+function switchTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById('tab-land').style.display=name==='land'?'':'none';
+  document.getElementById('tab-power').style.display=name==='power'?'':'none';
+  if(name==='land') renderLand();
+  if(name==='power') renderPower();
+}
+
+const landStatusMap={'交渉中':'badge-blue','契約済み':'badge-green','取得済み':'badge-purple','見送り':'badge-gray'};
+const powerStatusMap={'検討中':'badge-gray','作成中':'badge-gray','申込進行中':'badge-blue','検討料支払い待ち':'badge-yellow','受付':'badge-blue','回答済':'badge-green','契約済':'badge-purple','停止中':'badge-orange','不採択':'badge-red'};
+const sourceTypeMap={'PV':'badge-yellow','BESS':'badge-blue','WP':'badge-teal'};
+
+function badge(text,map){return `<span class="badge ${map[text]||'badge-gray'}">${text||'―'}</span>`;}
+
+function fmtCost(val){
+  const n=parseInt((val||'').toString().replace(/[^0-9]/g,''));
+  if(!n) return '―';
+  if(n>=100000000) return (n/100000000).toFixed(1)+'億円';
+  if(n>=10000) return Math.floor(n/10000)+'万円';
+  return n.toLocaleString()+'円';
+}
+
+function fmtDate(val){
+  if(!val||val==='') return '―';
+  const s=String(val);
+  // ISO形式（2026-07-10T...）
+  if(s.includes('T')){
+    const d=new Date(s);
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+  // スプレッドシートのシリアル値（数値）
+  if(/^\d+$/.test(s)){
+    const d=new Date((parseInt(s)-25569)*86400000);
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+  }
+  return s;
+}
+
+function getVoltageClass(v){
+  if(!v) return 'badge-gray';
+  if(v.startsWith('特別高圧')) return 'badge-purple';
+  if(v.startsWith('高圧')) return 'badge-orange';
+  return 'badge-gray';
+}
+
+function openMap(coords){
+  if(!coords||!coords.trim()){
+    alert('座標が登録されていません。編集から座標を入力してください。');
+    return;
+  }
+  window.open(`https://www.google.com/maps?q=${coords.trim()}`,'_blank');
+}
+
+function visibleToHtml(v, showDetail=false){
+  if(!v||v.trim()==='') return `<span class="hiddenCount">🔒 非公開</span>`;
+  const clients=v.split(',').map(c=>c.trim()).filter(c=>c&&c.toLowerCase()!=='blade');
+  if(!clients.length) return `<span class="hiddenCount">🔒 非公開</span>`;
+  if(showDetail) return clients.map(c=>`<span class="visibleTag">👁 ${c}</span>`).join(' ');
+  const tooltip=clients.join('\n');
+  return `<span class="visibleCount" title="${tooltip}">👁 ${clients.length}社</span>`;
+}
+
+function visibleCount(v){
+  if(!v||v.trim()==='') return 0;
+  return v.split(',').map(c=>c.trim()).filter(c=>c&&c.toLowerCase()!=='blade').length;
+}
+
+function fmtNumInput(el){
+  const raw=el.value.replace(/,/g,'');
+  if(!raw||isNaN(raw)) return;
+  el.value=Number(raw).toLocaleString();
+}
+function unFmtNumInput(el){
+  el.value=el.value.replace(/,/g,'');
+}
+
+function calcGuarantee(){
+  const n=parseInt((document.getElementById('p_cost').value||'').replace(/[^0-9]/g,''))||0;
+  const g=Math.floor(n*0.05);
+  document.getElementById('p_guaranteeAmount').value=g?g.toLocaleString():'';
+  document.getElementById('calcHint').textContent=n?`${fmtCost(String(n))} × 5% = ${fmtCost(String(g))}`:'';
+}
+
+function onSourceTypeChange(){
+  const v=document.getElementById('p_sourceType').value;
+  document.getElementById('pvwpFields').style.display=(v==='PV'||v==='WP')?'':'none';
+  document.getElementById('bessFields').style.display=(v==='BESS')?'':'none';
+  // kwhフィールドをリセット
+  if(v!=='BESS') document.getElementById('p_kw_discharge').value='';
+  if(v!=='BESS') document.getElementById('p_kw_charge').value='';
+}
+
+function addComma(val){
+  const n=parseFloat(String(val||'').replace(/,/g,''));
+  if(isNaN(n)) return val||'';
+  return n.toLocaleString();
+}
+
+const sourceIcon={'PV':'☀️','BESS':'🔋','WP':'🌬️'};
+
+function voltageShort(v){
+  if(!v) return '';
+  // 「特別高圧 66kV」→「⚡特高 66kV」、「高圧 6.6kV」→「⚡高圧 6.6kV」、「低圧 200V」→「低圧 200V」
+  if(v.startsWith('特別高圧')) return v.replace('特別高圧','特高');
+  return v;
+}
+
+function sourceBadgeHtml(p){
+  const icon=sourceIcon[p.sourceType]||'';
+  const src=p.sourceType?`<span class="badge ${sourceTypeMap[p.sourceType]||'badge-gray'}" style="font-size:10px;white-space:nowrap">${icon} ${p.sourceType}</span>`:'';
+  const volt=p.voltage?`<span class="badge ${getVoltageClass(p.voltage)}" style="font-size:10px;white-space:nowrap">${voltageShort(p.voltage)}</span>`:'';
+  const deal=p.dealType?`<span class="badge ${p.dealType==='自社'?'badge-deal-jisha':'badge-deal-daiko'}" style="font-size:10px;white-space:nowrap">${p.dealType==='自社'?'🏠':'🏢'} ${p.dealType}</span>`:'';
+  return [src,volt,deal].filter(Boolean).join('&nbsp;');
+}
+
+function fmtCapacity(p){
+  const src=p.sourceType||'';
+  if(src==='BESS'){
+    const d=p.kw_discharge?addComma(p.kw_discharge)+'kW(放)':'';
+    const c=p.kw_charge?addComma(p.kw_charge)+'kW(充)':'';
+    const kwh=p.kwh?addComma(p.kwh)+'kWh':'';
+    return [d,c,kwh].filter(Boolean).join('<br>') || '―';
+  }
+  const kw=p.kw?addComma(p.kw)+'kW':'';
+  const kwh=p.kwh?addComma(p.kwh)+'kWh':'';
+  return [kw,kwh].filter(Boolean).join('<br>') || '―';
+}
+
+// ========== 多対多 紐付けヘルパー ==========
+function getLandIdsForPower(p){
+  if(!p.landLink) return [];
+  return String(p.landLink).split(',').map(s=>s.trim()).filter(Boolean);
+}
+function getPowerIdsForLand(l){
+  if(!l.powerLink) return [];
+  return String(l.powerLink).split(',').map(s=>s.trim()).filter(Boolean);
+}
+function getLinkedLands(p){
+  return getLandIdsForPower(p).map(id=>lands.find(l=>l.id==id)).filter(Boolean);
+}
+function getLinkedPowers(l){
+  // powerLink から直接紐付けられた申請 + landLinkに含まれる申請の両方
+  const fromPowerLink = getPowerIdsForLand(l).map(id=>powers.find(p=>p.id==id)).filter(Boolean);
+  const fromLandLink = powers.filter(p=>getLandIdsForPower(p).includes(String(l.id)));
+  const all = [...fromPowerLink, ...fromLandLink];
+  // 重複除去
+  const seen = new Set();
+  return all.filter(p=>{ if(seen.has(p.id)) return false; seen.add(p.id); return true; });
+}
+
+// ========== 土地一覧 ==========
+function renderLand(){
+  const search=document.querySelector('#tab-land .searchInput').value.toLowerCase();
+  const lfStatus=document.getElementById('lf_status')?document.getElementById('lf_status').value:'';
+  const lfCategory=document.getElementById('lf_category')?document.getElementById('lf_category').value:'';
+  const lfPref=document.getElementById('lf_pref')?document.getElementById('lf_pref').value:'';
+  const lfAreaMin=parseFloat(document.getElementById('lf_areaMin')?document.getElementById('lf_areaMin').value:'')||0;
+  const lfAreaMax=parseFloat(document.getElementById('lf_areaMax')?document.getElementById('lf_areaMax').value:'')||Infinity;
+  const filtered=lands.filter(l=>{
+    const area=parseFloat(String(l.area||'0').replace(/[^0-9.]/g,''))||0;
+    const pref=extractPref(l.address||'');
+    return (!search||(l.address||'').toLowerCase().includes(search)||(l.owner||'').toLowerCase().includes(search))
+      &&(!lfStatus||l.status===lfStatus)
+      &&(!lfCategory||l.landCategory===lfCategory)
+      &&(!lfPref||pref===lfPref)
+      &&(!lfAreaMin||area>=lfAreaMin)
+      &&(lfAreaMax===Infinity||area<=lfAreaMax);
+  });
+
+  document.getElementById('landStats').innerHTML=`
+    <div class="statCard blue"><div class="statIcon">📋</div><div class="statInfo"><div class="label">総件数</div><div class="value">${lands.length}</div></div></div>
+    <div class="statCard yellow"><div class="statIcon">🤝</div><div class="statInfo"><div class="label">交渉中</div><div class="value">${lands.filter(l=>l.status==='交渉中').length}</div></div></div>
+    <div class="statCard green"><div class="statIcon">📝</div><div class="statInfo"><div class="label">契約済み</div><div class="value">${lands.filter(l=>l.status==='契約済み').length}</div></div></div>
+    <div class="statCard purple"><div class="statIcon">🏡</div><div class="statInfo"><div class="label">取得済み</div><div class="value">${lands.filter(l=>l.status==='取得済み').length}</div></div></div>
+  `;
+
+  const isAdmin=currentRole==='admin';
+  const tbody=document.getElementById('landBody');
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="9"><div class="emptyState"><div class="emptyIcon">🌍</div><p>該当する土地情報がありません</p></div></td></tr>`;return;}
+
+  const rows=filtered.map(l=>{
+    const linkedPowers=getLinkedPowers(l);
+    const hasLinked=linkedPowers.length>0;
+    const menuId=`lmenu_${l.id}`;
+    return `<tr class="accordionRow" data-id="${l.id}">
+      <td style="color:var(--text2);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onclick="toggleAccordion('lacc_${l.id}')">
+        <strong style="color:var(--text)">${l.address||'―'}</strong>
+        ${hasLinked?`<button class="expandBtn" id="lexpand_${l.id}">▼</button>`:''}
+      </td>
+      <td style="font-weight:600">${l.area?Number(String(l.area).replace(/[^0-9.]/g,'')).toLocaleString()+'㎡':'―'}</td>
+      <td style="font-size:12px;color:var(--text2)">${l.landCategory||'―'}</td>
+      <td style="color:var(--text2);font-size:12px">${l.owner||'―'}</td>
+      <td>${badge(l.status,landStatusMap)}</td>
+      <td>${(()=>{const lp=getLinkedPowers(l);return lp.length?`<span class="linkedTag" style="cursor:default">⚡ ${lp.length}件</span>`:`<span style="color:var(--text3)">―</span>`})()}</td>
+      <td style="white-space:nowrap">${isAdmin?visibleToHtml(l.visibleTo):'―'}</td>
+      <td onclick="event.stopPropagation()"><div class="shryoCol">
+        ${l.coordinates?`<button class="shryoBtn map" onclick="openMap('${l.coordinates}')">🗺</button>`:`<button class="shryoBtn empty">🗺</button>`}
+        ${l.dropbox?`<button class="shryoBtn dropbox" onclick="window.open('${l.dropbox}','_blank')">📁</button>`:`<button class="shryoBtn empty">📁</button>`}
+        <button class="shryoBtn detail" onclick="openLandDetail('${l.id}')">詳細</button>
+      </div></td>
+      <td onclick="event.stopPropagation()">
+        ${isAdmin?`<div class="menuWrap"><button class="menuBtn" onclick="toggleMenu('${menuId}')">⋯</button><div class="menuDropdown" id="${menuId}"><button class="menuItem" onclick="closeAllMenus();openLandModal('${l.id}')">✏️ 編集</button><button class="menuItem" onclick="closeAllMenus();openShareModalById('land','${l.id}')">🔐 公開設定</button><button class="menuItem danger" onclick="closeAllMenus();deleteLand('${l.id}')">🗑 削除</button></div></div>`:'―'}
+      </td>
+    </tr>
+    ${hasLinked?`<tr class="accordionPanel" id="lacc_${l.id}" style="display:none"><td colspan="9" style="padding:0 0 8px 24px;background:#f8faff;">
+      <table class="miniTable">
+        <thead><tr>
+          <th>⚡ 物件名</th><th>事業者</th><th>容量</th><th>回答日</th><th>ステータス</th><th>資料</th>${isAdmin?'<th>編集</th>':''}
+        </tr></thead>
+        <tbody>
+          ${linkedPowers.map(p=>`<tr>
+            <td style="max-width:200px"><div style="display:flex;flex-wrap:wrap;gap:2px;margin-bottom:2px">${sourceBadgeHtml(p)}</div><span style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block">${p.name||'―'}</span></td>
+            <td style="color:var(--text2);font-size:11px">${p.businessName||'―'}</td>
+            <td style="font-size:11px">${fmtCapacity(p)}</td>
+            <td style="font-size:11px;color:var(--text2)">${fmtDate(p.ansdate)}</td>
+            <td>${badge(p.status,powerStatusMap)}</td>
+            <td><div class="miniShryoCol">
+              ${p.coordinates?`<button class="miniShryoBtn map" onclick="openMap('${p.coordinates}')">🗺</button>`:`<button class="miniShryoBtn empty">🗺</button>`}
+              ${p.dropbox?`<button class="miniShryoBtn dropbox" onclick="window.open('${p.dropbox}','_blank')">📁</button>`:`<button class="miniShryoBtn empty">📁</button>`}
+            </div></td>
+            ${isAdmin?`<td><button class="miniEditBtn" onclick="event.stopPropagation();openPowerModal('${p.id}')">✏️ 編集</button></td>`:''}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </td></tr>`:''}`;
+  });
+  tbody.innerHTML=rows.join('');
+}
+
+function openLandDetail(id){
+  const l=lands.find(x=>x.id==id);
+  if(!l) return;
+  document.getElementById('detailModalTitle').textContent=`🌍 ${l.name}`;
+  document.getElementById('detailContent').innerHTML=`
+    <div class="detailGrid">
+      <div class="detailItem"><div class="dlabel">所在地・地番</div><div class="dvalue">${l.address||'―'}</div></div>
+      <div class="detailItem"><div class="dlabel">面積</div><div class="dvalue">${l.area||'―'}</div></div>
+      <div class="detailItem"><div class="dlabel">地主・仲介業者</div><div class="dvalue">${l.owner||'―'}</div></div>
+      <div class="detailItem"><div class="dlabel">担当者</div><div class="dvalue">${l.person||'―'}</div></div>
+      <div class="detailItem"><div class="dlabel">ステータス</div><div class="dvalue">${badge(l.status,landStatusMap)}</div></div>
+      <div class="detailItem"><div class="dlabel">地目</div><div class="dvalue">${l.landCategory||'―'}</div></div>
+      <div class="detailItem"><div class="dlabel">座標</div><div class="dvalue">${l.coordinates||'―'}</div></div>
+      <div class="detailItem full"><div class="dlabel">備考</div><div class="dvalue">${l.note||'―'}</div></div>
+    </div>
+  `;
+  document.getElementById('detailModal').classList.add('active');
+}
+
+function openLandModal(id=null){
+  editLandId=id;
+  document.getElementById('landModalTitle').textContent=id?'🌍 土地を編集':'🌍 土地を追加';
+  const fields=['name','address','area','owner','status','person','dropbox','note','coordinates','landCategory','powerLink'];
+  if(id){const l=lands.find(x=>x.id==id);fields.forEach(f=>{const el=document.getElementById('l_'+f);if(el)el.value=l[f]||'';});}
+  else{fields.forEach(f=>{const el=document.getElementById('l_'+f);if(el)el.value='';});}
+  // 電力申請紐付けの初期化
+  if(id){
+    const l=lands.find(x=>x.id==id);
+    const pids=getPowerIdsForLand(l);
+    // landLinkに含まれる申請も追加
+    const fromLandLink=powers.filter(p=>getLandIdsForPower(p).includes(String(id))).map(p=>String(p.id));
+    selectedPowerIds=[...new Set([...pids,...fromLandLink])];
+  } else {
+    selectedPowerIds=[];
+  }
+  updateSelectedPowersDisplay();
+  const dupBtn=document.getElementById('landDuplicateBtn');
+  if(dupBtn) dupBtn.style.display=id?'':'none';
+  document.getElementById('landModal').classList.add('active');
+}
+
+async function saveLand(){
+  const nameEl=document.getElementById('l_name');
+  const address=document.getElementById('l_address').value.trim();
+  const name=nameEl?nameEl.value.trim():address;
+  if(!address){alert('所在地・地番を入力してください');return;}
+  const obj={id:editLandId||'',name:name||address,
+    address:document.getElementById('l_address').value,
+    area:document.getElementById('l_area').value.replace(/[^0-9.]/g,''),  // カンマ・㎡を除去
+    owner:document.getElementById('l_owner').value,
+    status:document.getElementById('l_status').value,
+    person:document.getElementById('l_person').value,
+    dropbox:document.getElementById('l_dropbox').value,
+    note:document.getElementById('l_note').value,
+    coordinates:document.getElementById('l_coordinates').value,
+    landCategory:document.getElementById('l_landCategory')?document.getElementById('l_landCategory').value:'',
+    powerLink:selectedPowerIds.join(','),
+    clientId:'BLADE',
+  };
+  showLoading('保存中...');
+  try{await gasRequest({action:'saveLand',data:JSON.stringify(obj)});await loadAll();}
+  catch(e){alert('保存に失敗しました');}
+  hideLoading();closeModal('landModal');renderLand();
+}
+
+async function deleteLand(id){
+  if(!confirm('この土地情報を削除しますか？'))return;
+  showLoading('削除中...');
+  try{await gasRequest({action:'deleteLand',id});await loadAll();}
+  catch(e){alert('削除に失敗しました');}
+  hideLoading();renderLand();
+}
+
+// ========== 電力申請一覧 ==========
+function renderPower(){
+  const search=document.querySelector('#tab-power .searchInput').value.toLowerCase();
+  const pfStatus=document.getElementById('pf_status')?document.getElementById('pf_status').value:'';
+  const pfSrc=document.getElementById('pf_sourceType')?document.getElementById('pf_sourceType').value:'';
+  const pfCompany=document.getElementById('pf_company')?document.getElementById('pf_company').value:'';
+  const pfPref=document.getElementById('pf_pref')?document.getElementById('pf_pref').value:'';
+  const pfVoltage=document.getElementById('pf_voltage')?document.getElementById('pf_voltage').value:'';
+  const pfDeadline=parseInt(document.getElementById('pf_deadline')?document.getElementById('pf_deadline').value:'')||0;
+  const pfDealType=document.getElementById('pf_dealType')?document.getElementById('pf_dealType').value:'';
+  const now=new Date();
+  const filtered=powers.filter(p=>{
+    const pref=extractPref(p.siteAddress||p.coordinates||'');
+    const voltageGroup=p.voltage?p.voltage.split(' ')[0]:'';
+    const deadlineOk=!pfDeadline||(p.ansdate&&(new Date(p.ansdate)-now)<=pfDeadline*86400000&&new Date(p.ansdate)>=now);
+    return (!search||String(p.name||'').toLowerCase().includes(search)||String(p.businessName||'').toLowerCase().includes(search))
+      &&(!pfStatus||p.status===pfStatus)
+      &&(!pfSrc||p.sourceType===pfSrc)
+      &&(!pfCompany||p.company===pfCompany)
+      &&(!pfPref||pref===pfPref)
+      &&(!pfVoltage||voltageGroup===pfVoltage)
+      &&(!pfDeadline||deadlineOk)
+      &&(!pfDealType||p.dealType===pfDealType)
+      &&(!dealFilter||p.dealType===dealFilter);
+  });
+  const totalCost=powers.reduce((s,p)=>s+(parseInt((p.cost||'').toString().replace(/[^0-9]/g,''))||0),0);
+
+  document.getElementById('powerStats').innerHTML=`
+    <div class="statCard blue"><div class="statIcon">📋</div><div class="statInfo"><div class="label">総申請数</div><div class="value">${powers.length}</div></div></div>
+    <div class="statCard yellow"><div class="statIcon">⏳</div><div class="statInfo"><div class="label">回答待ち</div><div class="value">${powers.filter(p=>p.status==='回答待ち').length}</div></div></div>
+    <div class="statCard green"><div class="statIcon">✅</div><div class="statInfo"><div class="label">回答済み</div><div class="value">${powers.filter(p=>p.status==='回答済み').length}</div></div></div>
+    <div class="statCard yellow"><div class="statIcon">💴</div><div class="statInfo"><div class="label">工事費合計</div><div class="value" style="font-size:16px">${totalCost?fmtCost(String(totalCost)):'―'}</div></div></div>
+  `;
+
+  const isAdmin=currentRole==='admin';
+  const tbody=document.getElementById('powerBody');
+  if(!filtered.length){tbody.innerHTML=`<tr><td colspan="9"><div class="emptyState"><div class="emptyIcon">⚡</div><p>該当する申請情報がありません</p></div></td></tr>`;return;}
+
+  // アラートチェック
+  const alertPowers=checkAlerts();
+  const alertIds=new Set(alertPowers.map(p=>p.id));
+  const banner=document.getElementById('alertBanner');
+  const alertList=document.getElementById('alertList');
+  if(banner){
+    if(alertPowers.length){
+      banner.style.display='block';
+      alertList.textContent='：'+alertPowers.map(p=>`${p.name}（${fmtDate(p.ansdate)}）`).join('、');
+    } else {
+      banner.style.display='none';
+    }
+  }
+
+  const rows=filtered.map(p=>{
+    const isAlert=alertIds.has(p.id);
+    const linkedLands=getLinkedLands(p);
+    const hasLinked=linkedLands.length>0;
+    const menuId=`pmenu_${p.id}`;
+    return `<tr class="accordionRow" style="${isAlert?'background:#fffbeb;':''}cursor:pointer" onclick="toggleAccordion('pacc_${p.id}')">
+      <td>
+        <div style="display:flex;flex-wrap:nowrap;gap:3px;margin-bottom:3px">${sourceBadgeHtml(p)}</div>
+        <strong style="white-space:nowrap">${p.name||'―'}</strong>
+        ${hasLinked?`<button class="expandBtn" id="pexpand_${p.id}">▼</button>`:''}
+        ${p.receiptNumber?`<br><span style="font-size:11px;color:var(--text3)">🔢 ${p.receiptNumber}</span>`:''}
+        ${isAlert?`<span class="badge badge-yellow" style="font-size:10px;margin-left:4px;">⚠️ 回答期限間近</span>`:''}
+      </td>
+      <td style="font-size:12px;color:var(--text2);white-space:nowrap">${p.businessName||'―'}</td>
+      <td style="color:var(--text2);font-size:12px">${p.company||'―'}</td>
+      <td style="font-size:12px">${fmtCapacity(p)}</td>
+      <td style="font-size:12px;color:var(--text2);white-space:nowrap">${fmtDate(p.ansdate)}</td>
+      <td>${badge(p.status,powerStatusMap)}</td>
+      <td style="white-space:nowrap">${isAdmin?visibleToHtml(p.visibleTo):'―'}</td>
+      <td onclick="event.stopPropagation()"><div class="shryoCol">
+        ${p.coordinates?`<button class="shryoBtn map" onclick="openMap('${p.coordinates}')">🗺</button>`:`<button class="shryoBtn empty">🗺</button>`}
+        ${p.dropbox?`<button class="shryoBtn dropbox" onclick="window.open('${p.dropbox}','_blank')">📁</button>`:`<button class="shryoBtn empty">📁</button>`}
+        <button class="shryoBtn detail" onclick="openPowerDetail('${p.id}')">詳細</button>
+      </div></td>
+      <td onclick="event.stopPropagation()">
+        ${isAdmin?`<div class="menuWrap"><button class="menuBtn" onclick="toggleMenu('${menuId}')">⋯</button><div class="menuDropdown" id="${menuId}"><button class="menuItem" onclick="closeAllMenus();openPowerModal('${p.id}')">✏️ 編集</button><button class="menuItem" onclick="closeAllMenus();openPowerModal('${p.id}');setTimeout(()=>duplicatePower(),100)">📋 複製</button><button class="menuItem" onclick="closeAllMenus();openShareModalById('power','${p.id}')">🔐 公開設定</button><button class="menuItem danger" onclick="closeAllMenus();deletePower('${p.id}')">🗑 削除</button></div></div>`:'―'}
+      </td>
+    </tr>
+    ${hasLinked?`<tr class="accordionPanel" id="pacc_${p.id}" style="display:none"><td colspan="9" style="padding:0 0 8px 24px;background:#f8faff;">
+      <table class="miniTable">
+        <thead><tr>
+          <th>🌍 所在地・地番</th><th>面積</th><th>地目</th><th>地主・仲介</th><th>ステータス</th><th>資料</th>${isAdmin?'<th>編集</th>':''}
+        </tr></thead>
+        <tbody>
+          ${linkedLands.map(l=>`<tr>
+            <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${l.address||'―'}</td>
+            <td>${l.area?Number(String(l.area).replace(/[^0-9.]/g,'')).toLocaleString()+'㎡':'―'}</td>
+            <td style="color:var(--text2)">${l.landCategory||'―'}</td>
+            <td style="color:var(--text2)">${l.owner||'―'}</td>
+            <td>${badge(l.status,landStatusMap)}</td>
+            <td><div class="miniShryoCol">
+              ${l.coordinates?`<button class="miniShryoBtn map" onclick="openMap('${l.coordinates}')">🗺</button>`:`<button class="miniShryoBtn empty">🗺</button>`}
+              ${l.dropbox?`<button class="miniShryoBtn dropbox" onclick="window.open('${l.dropbox}','_blank')">📁</button>`:`<button class="miniShryoBtn empty">📁</button>`}
+            </div></td>
+            ${isAdmin?`<td><button class="miniEditBtn" onclick="event.stopPropagation();openLandModal('${l.id}')">✏️ 編集</button></td>`:''}
+          </tr>`).join('')}
+        </tbody>
+      </table>
+    </td></tr>`:''}`;
+  });
+  tbody.innerHTML=rows.join('');
+}
+
+function openPowerDetail(id){
+  const p=powers.find(x=>x.id==id);
+  if(!p) return;
+  const linked=lands.find(l=>l.id==p.landLink);
+  const src=p.sourceType||'';
+  const capacityHtml=src==='BESS'?`
+    <div class="detailItem"><div class="dlabel">出力容量 放電側</div><div class="dvalue">${p.kw_discharge?p.kw_discharge+'kW':'―'}</div></div>
+    <div class="detailItem"><div class="dlabel">出力容量 充電側</div><div class="dvalue">${p.kw_charge?p.kw_charge+'kW':'―'}</div></div>
+    <div class="detailItem"><div class="dlabel">蓄電池容量</div><div class="dvalue">${p.kwh?p.kwh+'kWh':'―'}</div></div>
+  `:`
+    <div class="detailItem"><div class="dlabel">出力容量</div><div class="dvalue">${p.kw?p.kw+'kW':'―'}</div></div>
+    <div class="detailItem"><div class="dlabel">設備容量</div><div class="dvalue">${p.kwh?p.kwh+'kWh':'―'}</div></div>
+  `;
+  document.getElementById('detailModalTitle').textContent=`⚡ ${p.name}`;
+  document.getElementById('detailContent').innerHTML=`
+    <div class="detailGrid">
+      <div class="detailItem"><div class="dlabel">事業者名</div><div class="dvalue">${p.businessName||'―'}</div></div>
+      <div class="detailItem"><div class="dlabel">申請種別</div><div class="dvalue">${p.type||'―'}</div></div>
+      ${capacityHtml}
+      <div class="detailItem"><div class="dlabel">工事費負担金</div><div class="dvalue" style="color:var(--accent3);font-weight:700">${fmtCost(p.cost)}</div></div>
+      <div class="detailItem"><div class="dlabel">保証金額</div><div class="dvalue">${fmtCost(p.guaranteeAmount)}</div></div>
+      <div class="detailItem"><div class="dlabel">保証金ステータス</div><div class="dvalue">${p.guaranteeStatus||'―'}</div></div>
+      <div class="detailItem full"><div class="dlabel">土地紐付け</div><div class="dvalue">${
+        getLinkedLands(p).map(l=>`<span class="linkedTag clickableTag" onclick="closeModal('detailModal');jumpToLand('${l.id}')" style="margin-right:4px">🌍 ${l.name}</span>`).join('')||'―'
+      }</div></div>
+      <div class="detailItem"><div class="dlabel">座標</div><div class="dvalue">${p.coordinates||'―'}</div></div>
+      <div class="detailItem"><div class="dlabel">受付番号</div><div class="dvalue">${p.receiptNumber||'―'}</div></div>
+      <div class="detailItem"><div class="dlabel">供給番号</div><div class="dvalue">${p.supplyNumber||'―'}</div></div>
+      ${currentRole==='admin'?`<div class="detailItem"><div class="dlabel">公開状況</div><div class="dvalue">${visibleToHtml(p.visibleTo,true)||'非公開'}</div></div>`:''}
+      <div class="detailItem full"><div class="dlabel">発電場所住所</div><div class="dvalue">${p.siteAddress||'―'}</div></div>
+      <div class="detailItem full"><div class="dlabel">備考</div><div class="dvalue">${p.note||'―'}</div></div>
+    </div>
+  `;
+  document.getElementById('detailModal').classList.add('active');
+}
+
+function openPowerModal(id=null){
+  editPowerId=id;
+  document.getElementById('powerModalTitle').textContent=id?'⚡ 申請を編集':'⚡ 電力申請を追加';
+
+  // ★ステップ1: 全タグを必ずリセット（UIとhidden両方）
+  clearAllTags();
+
+  // ★ステップ2: 全フォームをクリア
+  const textFields=['name','businessName','company','type','ansdate','cost','guaranteeAmount','guaranteeStatus','status','coordinates','dropbox','note','kw','kwh','kw_discharge','kw_charge','receiptNumber','supplyNumber','siteAddress'];
+  textFields.forEach(f=>{const el=document.getElementById('p_'+f);if(el)el.value='';});
+  document.getElementById('pvwpFields').style.display='none';
+  document.getElementById('bessFields').style.display='none';
+
+  if(id){
+    const p=powers.find(x=>x.id==id);
+    if(!p) return;
+
+    // ★ステップ3: テキスト・select系フィールドを復元
+    textFields.forEach(f=>{
+      const el=document.getElementById('p_'+f);
+      if(!el) return;
+      if(f==='ansdate'){
+        const v=String(p[f]||'');
+        if(!v){el.value='';}
+        else if(v.includes('T')){
+          const d=new Date(v);
+          el.value=d.toISOString().split('T')[0];
+        } else if(/^\d+$/.test(v)){
+          const d=new Date((parseInt(v)-25569)*86400000);
+          el.value=`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+        } else{el.value=v;}
+      } else if(['kw','kwh','kw_discharge','kw_charge','cost','guaranteeAmount'].includes(f)){
+        el.value=String(p[f]||'').replace(/,/g,'');
+      } else{el.value=p[f]||'';}
+    });
+
+    // BESS用kwh
+    const bessKwh=document.getElementById('p_kwh_bess');
+    if(bessKwh) bessKwh.value=String(p['kwh']||'').replace(/,/g,'');
+
+    // ★ステップ4: タグUIを値ベースで復元（リセット済みの状態から）
+    applyTagUI('p_sourceType', p.sourceType||'');
+    applyTagUI('p_voltage', p.voltage||'');
+    applyTagUI('p_dealType', p.dealType||'');
+
+    // ★ステップ5: 容量フィールド表示切替
+    onSourceTypeChange();
+  }
+  document.getElementById('calcHint').textContent='';
+  // 土地紐付けの初期化
+  if(id){
+    const p=powers.find(x=>x.id==id);
+    selectedLandIds=getLandIdsForPower(p);
+  } else {
+    selectedLandIds=[];
+  }
+  updateSelectedLandsDisplay();
+  const dupBtnP=document.getElementById('powerDuplicateBtn');
+  if(dupBtnP) dupBtnP.style.display=id?'':'none';
+  document.getElementById('powerModal').classList.add('active');
+}
+
+async function savePower(){
+  const name=document.getElementById('p_name').value.trim();
+  if(!name){alert('物件名を入力してください');return;}
+  const src=document.getElementById('p_sourceType').value;
+  const guaranteeRaw=document.getElementById('p_guaranteeAmount').value.replace(/[^0-9]/g,'');
+  const obj={id:editPowerId||'',name,
+    businessName:document.getElementById('p_businessName').value,
+    company:document.getElementById('p_company').value,
+    voltage:document.getElementById('p_voltage').value,
+    type:document.getElementById('p_type').value,
+    sourceType:src,
+    kw:src!=='BESS'?document.getElementById('p_kw').value.replace(/,/g,''):'',
+    kwh:src==='BESS'?(document.getElementById('p_kwh_bess')?document.getElementById('p_kwh_bess').value.replace(/,/g,''):''):(document.getElementById('p_kwh')?document.getElementById('p_kwh').value.replace(/,/g,''):''),
+    kw_discharge:src==='BESS'?document.getElementById('p_kw_discharge').value.replace(/,/g,''):'',
+    kw_charge:src==='BESS'?document.getElementById('p_kw_charge').value.replace(/,/g,''):'',
+    ansdate:document.getElementById('p_ansdate').value,
+    cost:document.getElementById('p_cost').value,
+    guaranteeAmount:guaranteeRaw,
+    guaranteeStatus:document.getElementById('p_guaranteeStatus').value,
+    status:document.getElementById('p_status').value,
+    coordinates:document.getElementById('p_coordinates').value,
+    person:document.getElementById('p_person')?document.getElementById('p_person').value:'',
+    dropbox:document.getElementById('p_dropbox').value,
+    note:document.getElementById('p_note').value,
+    landLink:selectedLandIds.join(','),
+    dealType:document.getElementById('p_dealType')?document.getElementById('p_dealType').value:'',
+    receiptNumber:document.getElementById('p_receiptNumber')?document.getElementById('p_receiptNumber').value:'',
+    supplyNumber:document.getElementById('p_supplyNumber')?document.getElementById('p_supplyNumber').value:'',
+    siteAddress:document.getElementById('p_siteAddress')?document.getElementById('p_siteAddress').value:'',
+    clientId:'BLADE',
+  };
+  showLoading('保存中...');
+  try{await gasRequest({action:'savePower',data:JSON.stringify(obj)});await loadAll();}
+  catch(e){alert('保存に失敗しました');}
+  hideLoading();closeModal('powerModal');renderPower();
+}
+
+async function deletePower(id){
+  if(!confirm('この申請情報を削除しますか？'))return;
+  showLoading('削除中...');
+  try{await gasRequest({action:'deletePower',id});await loadAll();}
+  catch(e){alert('削除に失敗しました');}
+  hideLoading();renderPower();
+}
+
+// ========== 公開設定 ==========
+function openShareModalById(sheet,id){
+  const row=(sheet==='land'?lands:powers).find(r=>r.id==id);
+  if(!row) return;
+  openShareModal(sheet,id,row.name||'',row.visibleTo||'');
+}
+
+function openShareModal(sheet,id,name,visibleTo){
+  shareTarget={sheet,id,visibleTo:visibleTo||''};
+  document.getElementById('shareModalName').textContent=`📋 ${name}`;
+  const currentVisible=(visibleTo||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const clients=(clientIds||[]).filter(c=>c&&c.toLowerCase()!=='blade');
+  if(!clients.length){
+    document.getElementById('shareList').innerHTML=`<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">登録されている取引先がありません</div>`;
+  } else {
+    document.getElementById('shareList').innerHTML=clients.map(c=>`
+      <div class="shareItem">
+        <span style="font-weight:600">🏢 ${c}</span>
+        <button class="shareToggle ${currentVisible.includes(c)?'on':'off'}" id="toggle_${CSS.escape(c)}" onclick="toggleShare('${c}')">
+          ${currentVisible.includes(c)?'👁 公開中':'🔒 非公開'}
+        </button>
+      </div>`).join('');
+  }
+  document.getElementById('shareModal').classList.add('active');
+}
+
+function toggleShare(clientId){
+  const btn=document.getElementById('toggle_'+CSS.escape(clientId));
+  if(!btn) return;
+  const isOn=btn.classList.contains('on');
+  btn.classList.toggle('on',!isOn);btn.classList.toggle('off',isOn);
+  btn.textContent=isOn?'🔒 非公開':'👁 公開中';
+}
+
+async function saveShare(){
+  const filteredClients=(clientIds||[]).filter(c=>c&&c.toLowerCase()!=='blade');
+  const visible=filteredClients.filter(c=>{
+    const btn=document.getElementById('toggle_'+CSS.escape(c));
+    return btn&&btn.classList.contains('on');
+  });
+  const visibleTo=visible.join(',');
+  const {sheet,id}=shareTarget;
+  const row=(sheet==='land'?lands:powers).find(r=>r.id==id);
+  if(!row){alert('データが見つかりません');return;}
+  row.visibleTo=visibleTo;
+  showLoading('公開設定を保存中...');
+  try{
+    await gasRequest({action:sheet==='land'?'saveLand':'savePower',data:JSON.stringify(row)});
+    await loadAll();
+  }catch(e){alert('保存に失敗しました');}
+  hideLoading();closeModal('shareModal');
+  if(sheet==='land') renderLand(); else renderPower();
+}
+
+function closeModal(id){document.getElementById(id).classList.remove('active');}
+
+// ========== ナビゲーション ==========
+function jumpToLand(id){
+  navHistory.push({tab:'land', detailId:id});
+  switchTab('land', document.querySelector('.tab'));
+  setTimeout(()=>openLandDetail(id), 100);
+}
+
+function jumpToPower(id){
+  navHistory.push({tab:'power', detailId:id});
+  const tabs=document.querySelectorAll('.tab');
+  switchTab('power', tabs[1]);
+  setTimeout(()=>openPowerDetail(id), 100);
+}
+
+// ========== 土地ピッカー ==========
+function openLandPicker(){
+  renderLandPickerList('');
+  document.getElementById('landPickerModal').classList.add('active');
+}
+
+function filterLandPicker(q){
+  renderLandPickerList(q.toLowerCase());
+}
+
+function renderLandPickerList(q){
+  const filtered=lands.filter(l=>!q||String(l.name||'').toLowerCase().includes(q)||(l.address||'').toLowerCase().includes(q));
+  document.getElementById('landPickerList').innerHTML=filtered.map(l=>{
+    const checked=selectedLandIds.includes(String(l.id));
+    return `<div class="landPickerItem ${checked?'checked':''}" onclick="toggleLandPick('${l.id}',this)">
+      <input type="checkbox" ${checked?'checked':''} onclick="event.stopPropagation();toggleLandPick('${l.id}',this.closest('.landPickerItem'))">
+      <div>
+        <div style="font-weight:600;font-size:13px">${l.name}</div>
+        <div style="font-size:11px;color:var(--text2)">${l.address||''} ${l.status?'・'+l.status:''}</div>
+      </div>
+    </div>`;
+  }).join('');
+  updateLandPickerCount();
+}
+
+function toggleLandPick(id, el){
+  const idx=selectedLandIds.indexOf(String(id));
+  if(idx>=0){
+    selectedLandIds.splice(idx,1);
+    el.classList.remove('checked');
+    el.querySelector('input').checked=false;
+  } else {
+    selectedLandIds.push(String(id));
+    el.classList.add('checked');
+    el.querySelector('input').checked=true;
+  }
+  updateLandPickerCount();
+}
+
+function updateLandPickerCount(){
+  const el=document.getElementById('landPickerCount');
+  if(el) el.textContent=selectedLandIds.length;
+}
+
+function confirmLandPicker(){
+  updateSelectedLandsDisplay();
+  closeModal('landPickerModal');
+}
+
+function updateSelectedLandsDisplay(){
+  const el=document.getElementById('selectedLandsDisplay');
+  if(!el) return; // モーダルが開いてない場合はスキップ
+  if(!selectedLandIds.length){el.innerHTML='<span style="font-size:12px;color:var(--text3)">未選択</span>';return;}
+  el.innerHTML=selectedLandIds.map(id=>{
+    const l=lands.find(x=>String(x.id)===String(id));
+    return l?`<span class="linkedTag" style="cursor:pointer" onclick="removeLandPick('${id}')">🌍 ${l.name} ×</span>`:'';
+  }).join('');
+}
+
+function removeLandPick(id){
+  selectedLandIds=selectedLandIds.filter(x=>x!==String(id));
+  updateSelectedLandsDisplay();
+}
+
+// ========== 電力申請ピッカー ==========
+function openPowerPicker(){
+  renderPowerPickerList('');
+  document.getElementById('powerPickerModal').classList.add('active');
+}
+
+function filterPowerPicker(q){
+  renderPowerPickerList(q.toLowerCase());
+}
+
+function renderPowerPickerList(q){
+  const filtered=powers.filter(p=>!q||String(p.name||'').toLowerCase().includes(q));
+  document.getElementById('powerPickerList').innerHTML=filtered.map(p=>{
+    const checked=selectedPowerIds.includes(String(p.id));
+    return `<div class="landPickerItem ${checked?'checked':''}" onclick="togglePowerPick('${p.id}',this)">
+      <input type="checkbox" ${checked?'checked':''} onclick="event.stopPropagation();togglePowerPick('${p.id}',this.closest('.landPickerItem'))">
+      <div>
+        <div style="font-weight:600;font-size:13px">${p.name}</div>
+        <div style="font-size:11px;color:var(--text2)">${p.company||''} ${p.voltage?'・'+p.voltage:''} ${p.status?'・'+p.status:''}</div>
+      </div>
+    </div>`;
+  }).join('');
+  updatePowerPickerCount();
+}
+
+function togglePowerPick(id, el){
+  const idx=selectedPowerIds.indexOf(String(id));
+  if(idx>=0){
+    selectedPowerIds.splice(idx,1);
+    el.classList.remove('checked');
+    el.querySelector('input').checked=false;
+  } else {
+    selectedPowerIds.push(String(id));
+    el.classList.add('checked');
+    el.querySelector('input').checked=true;
+  }
+  updatePowerPickerCount();
+}
+
+function updatePowerPickerCount(){
+  const el=document.getElementById('powerPickerCount');
+  if(el) el.textContent=selectedPowerIds.length;
+}
+
+function confirmPowerPicker(){
+  updateSelectedPowersDisplay();
+  closeModal('powerPickerModal');
+}
+
+function updateSelectedPowersDisplay(){
+  const el=document.getElementById('selectedPowersDisplay');
+  if(!el) return; // モーダルが開いてない場合はスキップ
+  if(!selectedPowerIds.length){el.innerHTML='<span style="font-size:12px;color:var(--text3)">未選択</span>';return;}
+  el.innerHTML=selectedPowerIds.map(id=>{
+    const p=powers.find(x=>String(x.id)===String(id));
+    return p?`<span class="linkedTag" style="cursor:pointer;background:var(--accent-light);border-color:#bfdbfe;color:var(--accent)" onclick="removePowerPick('${id}')">⚡ ${p.name} ×</span>`:'';
+  }).join('');
+}
+
+function removePowerPick(id){
+  selectedPowerIds=selectedPowerIds.filter(x=>x!==String(id));
+  updateSelectedPowersDisplay();
+}
+
+// ========== 都道府県抽出 ==========
+const PREFS=['北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県','茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県','新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県','三重県','滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県','鳥取県','島根県','岡山県','広島県','山口県','徳島県','香川県','愛媛県','高知県','福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県'];
+function extractPref(addr){
+  if(!addr) return '';
+  for(const p of PREFS){ if(addr.includes(p)) return p; }
+  return '';
+}
+
+function buildPrefOptions(addrs, selectId){
+  const sel=document.getElementById(selectId);
+  if(!sel) return;
+  const current=sel.value;
+  const prefs=[...new Set(addrs.map(a=>extractPref(a)).filter(Boolean))].sort();
+  sel.innerHTML='<option value="">すべて</option>'+prefs.map(p=>`<option${p===current?' selected':''}>${p}</option>`).join('');
+}
+
+// ========== 条件検索パネル ==========
+function toggleFilterPanel(tab){
+  const panel=document.getElementById(tab+'FilterPanel');
+  const btn=document.getElementById(tab+'FilterBtn');
+  if(!panel||!btn) return;
+  const isOpen=panel.classList.contains('open');
+  panel.classList.toggle('open',!isOpen);
+  btn.classList.toggle('active',!isOpen);
+  btn.textContent=isOpen?'条件検索 ▼':'条件検索 ▲';
+  if(!isOpen){
+    // パネルを開いたときに都道府県リストを更新
+    if(tab==='land') buildPrefOptions(lands.map(l=>l.address||''),'lf_pref');
+    if(tab==='power') buildPrefOptions(powers.map(p=>p.siteAddress||p.coordinates||''),'pf_pref');
+  }
+}
+
+function updateClearBtn(tab){
+  const btn=document.getElementById(tab+'ClearBtn');
+  if(!btn) return;
+  let hasFilter=false;
+  if(tab==='land'){
+    hasFilter=!!(document.getElementById('lf_status')?.value||document.getElementById('lf_category')?.value||document.getElementById('lf_pref')?.value||document.getElementById('lf_areaMin')?.value||document.getElementById('lf_areaMax')?.value);
+  } else {
+    hasFilter=!!(document.getElementById('pf_status')?.value||document.getElementById('pf_sourceType')?.value||document.getElementById('pf_company')?.value||document.getElementById('pf_pref')?.value||document.getElementById('pf_voltage')?.value||document.getElementById('pf_deadline')?.value);
+  }
+  btn.style.display=hasFilter?'':'none';
+}
+
+function clearLandFilter(){
+  ['lf_status','lf_category','lf_pref'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  ['lf_areaMin','lf_areaMax'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.querySelector('#tab-land .searchInput').value='';
+  document.getElementById('landClearBtn').style.display='none';
+  renderLand();
+}
+
+function clearPowerFilter(){
+  ['pf_status','pf_sourceType','pf_company','pf_pref','pf_voltage','pf_deadline','pf_dealType'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';}); dealFilter=''; setDealFilter('');
+  document.querySelector('#tab-power .searchInput').value='';
+  document.getElementById('powerClearBtn').style.display='none';
+  renderPower();
+}
+
+// ========== タグ選択 ==========
+// タグvalue→colorクラスのマップ
+const TAG_COLORS = {
+  'PV':'pv','BESS':'bess','WP':'wp',
+  '特別高圧 66kV':'tokko','高圧 6.6kV':'kouatsu','低圧':'teiatu',
+  '自社':'jisha','申請代行':'daiko'
+};
+
+// ボタンのonclick属性から値を取得
+function getTagBtnValue(btn){
+  const m = btn.getAttribute('onclick').match(/',this/);
+  if(!m) return null;
+  const full = btn.getAttribute('onclick');
+  const match = full.match(/selectTag\('[^']+','([^']+)',this/);
+  return match ? match[1] : null;
+}
+
+// 1グループのタグUIとhiddenをリセット
+function clearTagGroup(fieldId){
+  const field = document.getElementById(fieldId);
+  if(field) field.value = '';
+  const group = field ? field.nextElementSibling : null;
+  if(group && group.classList.contains('tagSelector')){
+    group.querySelectorAll('.tagBtn').forEach(b=>{
+      b.classList.remove('selected','bess','pv','wp','tokko','kouatsu','teiatu','jisha','daiko');
+    });
+  }
+}
+
+// 全タググループをリセット
+function clearAllTags(){
+  ['p_voltage','p_sourceType','p_dealType'].forEach(clearTagGroup);
+}
+
+// hiddenの値からUIを復元（完全一致のみ）
+function applyTagUI(fieldId, value){
+  // ① まずグループをクリア
+  clearTagGroup(fieldId);
+  if(!value) return;
+  // ② hiddenに値をセット
+  const field = document.getElementById(fieldId);
+  if(!field) return;
+  field.value = value;
+  // ③ 完全一致するボタンにのみselectedを付与
+  const group = field.nextElementSibling;
+  if(!group || !group.classList.contains('tagSelector')) return;
+  group.querySelectorAll('.tagBtn').forEach(b=>{
+    const btnVal = getTagBtnValue(b);
+    if(btnVal === value){
+      b.classList.add('selected', TAG_COLORS[value] || '');
+    }
+  });
+}
+
+// ボタンクリック時の処理
+function selectTag(fieldId, value, btn, colorClass){
+  // ① グループ内の全ボタンのselectedを削除
+  const group = btn.closest('.tagSelector');
+  group.querySelectorAll('.tagBtn').forEach(b=>{
+    b.classList.remove('selected','bess','pv','wp','tokko','kouatsu','teiatu','jisha','daiko');
+  });
+  // ② hidden更新とUI付与
+  const field = document.getElementById(fieldId);
+  if(!field) return;
+  if(field.value === value){
+    field.value = ''; // 同じ値を再クリック→解除
+  } else {
+    field.value = value;
+    btn.classList.add('selected', colorClass);
+  }
+}
+
+function setTagFromValue(fieldId, value){
+  applyTagUI(fieldId, value);
+}
+
+// ========== 自社/申請代行フィルター ==========
+let dealFilter = '';
+function setDealFilter(val){
+  dealFilter = val;
+  ['deal_all','deal_jisha','deal_daiko'].forEach(id=>{
+    document.getElementById(id)?.classList.remove('active');
+  });
+  if(!val) document.getElementById('deal_all')?.classList.add('active');
+  else if(val==='自社') document.getElementById('deal_jisha')?.classList.add('active');
+  else document.getElementById('deal_daiko')?.classList.add('active');
+  renderPower();
+}
+
+// ========== アコーディオン ==========
+function toggleAccordion(id){
+  const panel=document.getElementById(id);
+  if(!panel) return;
+  const isOpen=panel.style.display!=='none';
+  panel.style.display=isOpen?'none':'';
+  // expandBtnの回転
+  const btnId=id.replace('lacc_','lexpand_').replace('pacc_','pexpand_');
+  const btn=document.getElementById(btnId);
+  if(btn) btn.classList.toggle('open',!isOpen);
+}
+
+// ========== 3点メニュー ==========
+function toggleMenu(id){
+  const menu=document.getElementById(id);
+  if(!menu) return;
+  const isOpen=menu.classList.contains('open');
+  closeAllMenus();
+  if(!isOpen) menu.classList.add('open');
+}
+function closeAllMenus(){
+  document.querySelectorAll('.menuDropdown.open').forEach(m=>m.classList.remove('open'));
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('.menuWrap')) closeAllMenus();
+});
+
+// ========== ソート ==========
+let landSortKey='', landSortDir=1;
+let powerSortKey='', powerSortDir=1;
+
+function sortLand(key){
+  if(landSortKey===key) landSortDir*=-1;
+  else{landSortKey=key;landSortDir=1;}
+  lands.sort((a,b)=>{
+    if(key==='area'){
+      return (parseFloat(String(a[key]||'0').replace(/[^0-9.]/g,''))-parseFloat(String(b[key]||'0').replace(/[^0-9.]/g,'')))*landSortDir;
+    }
+    if(key==='visibleTo'){
+      return (visibleCount(a.visibleTo)-visibleCount(b.visibleTo))*landSortDir;
+    }
+    const av=String(a[key]||'').toLowerCase();
+    const bv=String(b[key]||'').toLowerCase();
+    return av<bv?-landSortDir:av>bv?landSortDir:0;
+  });
+  // ソートアイコン更新
+  ['name','address','area','status','visibleTo'].forEach(k=>{
+    const el=document.getElementById('lsort_'+k);
+    if(el) el.textContent=k===key?(landSortDir===1?'↑':'↓'):'';
+  });
+  renderLand();
+}
+
+function sortPower(key){
+  if(powerSortKey===key) powerSortDir*=-1;
+  else{powerSortKey=key;powerSortDir=1;}
+  powers.sort((a,b)=>{
+    if(key==='voltage'){
+      const vo={'特別高圧 500kV':1,'特別高圧 220kV':2,'特別高圧 154kV':3,'特別高圧 110kV':4,'特別高圧 66kV':5,'特別高圧 33kV':6,'特別高圧 22kV':7,'高圧 6.6kV':8,'低圧 200V':9,'低圧 100V':10};
+      return ((vo[a.voltage]||99)-(vo[b.voltage]||99))*powerSortDir;
+    }
+    if(key==='ansdate'){
+      const da=a.ansdate?new Date(a.ansdate):new Date('9999');
+      const db=b.ansdate?new Date(b.ansdate):new Date('9999');
+      return (da-db)*powerSortDir;
+    }
+    if(key==='visibleTo'){
+      return (visibleCount(a.visibleTo)-visibleCount(b.visibleTo))*powerSortDir;
+    }
+    const av=String(a[key]||'').toLowerCase();
+    const bv=String(b[key]||'').toLowerCase();
+    return av<bv?-powerSortDir:av>bv?powerSortDir:0;
+  });
+  ['name','businessName','sourceType','voltage','ansdate','status','visibleTo'].forEach(k=>{
+    const el=document.getElementById('psort_'+k);
+    if(el) el.textContent=k===key?(powerSortDir===1?'↑':'↓'):'';
+  });
+  renderPower();
+}
+
+// ========== 電圧・日付ソート（旧関数は削除）==========
+
+
+// ========== 申請種別変更で供給番号表示切替 ==========
+function onTypeChange(){
+  const v=document.getElementById('p_type').value;
+  const f=document.getElementById('supplyNumberField');
+  if(f) f.style.display=v==='系統連系申込（低圧）'?'':'none';
+}
+
+// ========== 面積フォーマット ==========
+function fmtAreaInput(el){
+  const raw=el.value.replace(/[^0-9.]/g,'');
+  if(!raw||isNaN(Number(raw))) return;
+  el.value=Number(raw).toLocaleString();
+}
+function unFmtAreaInput(el){
+  el.value=el.value.replace(/[^0-9.]/g,'');
+}
+
+// ========== 複製機能 ==========
+function duplicateLand(){
+  const name=document.getElementById('l_name').value.trim();
+  if(!name){alert('物件名を入力してください');return;}
+  editLandId=null;
+  document.getElementById('l_name').value=name+'（複製）';
+  saveLand();
+}
+
+function duplicatePower(){
+  const name=document.getElementById('p_name').value.trim();
+  if(!name){alert('物件名を入力してください');return;}
+  if(!confirm(name+'を複製して保存しますか？'))return;
+  editPowerId=null;
+  document.getElementById('p_name').value=name+' (複製)';
+  savePower();
+}
+
+// ========== CSVエクスポート ==========
+function exportCSV(){
+  const headers=['物件名','事業者名','電源種別','電力会社','電圧','出力kW','蓄電kWh','申請種別','受付番号','回答日','工事費負担金','保証金額','ステータス','発電場所','備考'];
+  const rows=powers.map(p=>[
+    p.name||'',p.businessName||'',p.sourceType||'',p.company||'',p.voltage||'',
+    p.sourceType==='BESS'?`放電:${p.kw_discharge||''} 充電:${p.kw_charge||''}`:p.kw||'',
+    p.kwh||'',p.type||'',p.receiptNumber||'',fmtDate(p.ansdate),
+    p.cost||'',p.guaranteeAmount||'',p.status||'',p.siteAddress||p.coordinates||'',p.note||''
+  ].map(v=>`"${String(v).replace(/"/g,'""')}"`).join(','));
+  const csv=[headers.join(','),...rows].join('\n')
+  const a=document.createElement('a');
+  a.href='data:text/csv;charset=utf-8,%EF%BB%BF'+encodeURIComponent(csv);
+  a.download=`blade_申請一覧_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+// ========== 回答期限アラート（1週間以内） ==========
+function checkAlerts(){
+  const now=new Date();
+  const week=7*24*60*60*1000;
+  return powers.filter(p=>{
+    if(!p.ansdate) return false;
+    const d=new Date(p.ansdate);
+    const diff=d-now;
+    return diff>=0 && diff<=week;
+  });
+}
+// ========== 初期化 ==========
+window.onload=()=>{
+  initCache();
+  loadAll().then(()=>{
+    renderLand();
+    initSortable();
+  });
+};
+
+let landSortable=null, powerSortable=null;
+
+function initSortable(){
+  const landTbody=document.getElementById('landBody');
+  const powerTbody=document.getElementById('powerBody');
+  if(landTbody && typeof Sortable !== 'undefined'){
+    landSortable=Sortable.create(landTbody,{
+      handle:'.drag-handle',
+      animation:150,
+      ghostClass:'sortable-ghost',
+      chosenClass:'sortable-chosen',
+      filter:'.accordionPanel',
+      onEnd: function(evt){
+        // アコーディオンパネルを正しい位置に移動
+        const rows=landTbody.querySelectorAll('tr.accordionRow');
+        rows.forEach(row=>{
+          const id=row.getAttribute('data-id');
+          const panel=document.getElementById('lacc_'+id);
+          if(panel) row.after(panel);
+        });
+        // landsの順番をDOMに合わせて更新
+        const newOrder=Array.from(landTbody.querySelectorAll('tr.accordionRow')).map(r=>r.getAttribute('data-id'));
+        lands.sort((a,b)=>newOrder.indexOf(String(a.id))-newOrder.indexOf(String(b.id)));
+      }
+    });
+  }
+  if(powerTbody && typeof Sortable !== 'undefined'){
+    powerSortable=Sortable.create(powerTbody,{
+      handle:'.drag-handle',
+      animation:150,
+      ghostClass:'sortable-ghost',
+      chosenClass:'sortable-chosen',
+      filter:'.accordionPanel',
+      onEnd: function(evt){
+        const rows=powerTbody.querySelectorAll('tr.accordionRow');
+        rows.forEach(row=>{
+          const id=row.getAttribute('data-id');
+          const panel=document.getElementById('pacc_'+id);
+          if(panel) row.after(panel);
+        });
+        const newOrder=Array.from(powerTbody.querySelectorAll('tr.accordionRow')).map(r=>r.getAttribute('data-id'));
+        powers.sort((a,b)=>newOrder.indexOf(String(a.id))-newOrder.indexOf(String(b.id)));
+      }
+    });
+  }
+}
+</script>
+</body>
+</html>
