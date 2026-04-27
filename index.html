@@ -268,8 +268,6 @@
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
 <style>
-  .drag-handle{cursor:grab;color:var(--text3);padding:0 6px;font-size:14px;user-select:none;flex-shrink:0;}
-  .drag-handle:active{cursor:grabbing;}
   tr.sortable-ghost{opacity:0.4;background:#eff6ff;}
   tr.sortable-chosen{background:#f8faff;}
   tr.accordionRow td:first-child{display:flex;align-items:center;gap:4px;}
@@ -940,7 +938,6 @@ function renderLand(){
     const menuId=`lmenu_${l.id}`;
     return `<tr class="accordionRow" data-id="${l.id}">
       <td style="color:var(--text2);font-size:12px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onclick="toggleAccordion('lacc_${l.id}')">
-        <span class="drag-handle" onclick="event.stopPropagation()">☰</span>
         <strong style="color:var(--text)">${l.address||'―'}</strong>
         ${hasLinked?`<button class="expandBtn" id="lexpand_${l.id}">▼</button>`:''}
       </td>
@@ -1115,12 +1112,14 @@ function renderPower(){
     const hasLinked=linkedLands.length>0;
     const menuId=`pmenu_${p.id}`;
     return `<tr class="accordionRow" style="${isAlert?'background:#fffbeb;':''}cursor:pointer" onclick="toggleAccordion('pacc_${p.id}')">
-      <td>
-        <div style="display:flex;flex-wrap:nowrap;gap:3px;margin-bottom:2px;overflow:hidden">${sourceBadgeHtml(p)}</div>
-        <strong style="white-space:nowrap">${p.name||'―'}</strong>
-        ${p.receiptNumber?`<br><span style="font-size:11px;color:var(--text3)">🔢 ${p.receiptNumber}</span>`:''}
-        ${isAlert?`<span class="badge badge-yellow" style="font-size:10px;margin-left:4px;">⚠️ 回答期限間近</span>`:''}
-        ${hasLinked?`<button class="expandBtn" id="pexpand_${p.id}">▼</button>`:''}
+      <td style="min-width:160px;max-width:260px">
+        <div style="display:flex;flex-wrap:nowrap;gap:3px;margin-bottom:3px">${sourceBadgeHtml(p)}</div>
+        <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+          <strong>${p.name||'―'}</strong>
+          ${hasLinked?`<button class="expandBtn" id="pexpand_${p.id}">▼</button>`:''}
+        </div>
+        ${p.receiptNumber?`<div style="font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">🔢 ${p.receiptNumber}</div>`:''}
+        ${isAlert?`<div><span class="badge badge-yellow" style="font-size:10px;">⚠️ 回答期限間近</span></div>`:''}
       </td>
       <td style="font-size:12px;color:var(--text2);white-space:nowrap">${p.businessName||'―'}</td>
       <td style="color:var(--text2);font-size:12px">${p.company||'―'}</td>
