@@ -1189,23 +1189,9 @@ function openPowerDetail(id){
   document.getElementById('detailModal').classList.add('active');
 }
 
-function resetAllTags(){
-  // 全タグセレクターのボタンをリセット
-  document.querySelectorAll('.tagSelector .tagBtn').forEach(b=>{
-    b.classList.remove('selected','bess','pv','wp','tokko','kouatsu','teiatu','jisha','daiko');
-  });
-  // hiddenフィールドもクリア
-  ['p_sourceType','p_voltage','p_dealType'].forEach(fid=>{
-    const f=document.getElementById(fid);
-    if(f) f.value='';
-  });
-}
-
 function openPowerModal(id=null){
   editPowerId=id;
   document.getElementById('powerModalTitle').textContent=id?'⚡ 申請を編集':'⚡ 電力申請を追加';
-  // まず全タグをリセット
-  resetAllTags();
   const fields=['name','businessName','company','type','ansdate','cost','guaranteeAmount','guaranteeStatus','status','coordinates','dropbox','note','kw','kwh','kw_discharge','kw_charge','receiptNumber','supplyNumber','siteAddress','dealType'];
   if(id){
     const p=powers.find(x=>x.id==id);
@@ -1252,7 +1238,6 @@ function openPowerModal(id=null){
     document.getElementById('pvwpFields').style.display='none';
     document.getElementById('bessFields').style.display='none';
   }
-  document.getElementById('calcHint').textContent='';
   document.getElementById('calcHint').textContent='';
   // 土地紐付けの初期化
   if(id){
@@ -1323,7 +1308,7 @@ function openShareModal(sheet,id,name,visibleTo){
   shareTarget={sheet,id,visibleTo:visibleTo||''};
   document.getElementById('shareModalName').textContent=`📋 ${name}`;
   const currentVisible=(visibleTo||'').split(',').map(s=>s.trim()).filter(Boolean);
-  const clients=(clientIds||[]).filter(c=>c&&c.toLowerCase()!=='blade');
+  const clients=clientIds||[];
   if(!clients.length){
     document.getElementById('shareList').innerHTML=`<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">登録されている取引先がありません</div>`;
   } else {
@@ -1569,16 +1554,41 @@ function clearPowerFilter(){
 }
 
 // ========== タグ選択 ==========
-function selectTag(fieldId, value, btn, colorClass){
-  // 同じグループのボタンを全部解除
-  const group = btn.closest('.tagSelector');
+// タグボタンのvalue→colorClassマッピング
+const TAG_COLOR_MAP = {
+  'PV':'pv','BESS':'bess','WP':'wp',
+  '特別高圧 66kV':'tokko','高圧 6.6kV':'kouatsu','低圧':'teiatu',
+  '自社':'jisha','申請代行':'daiko'
+};
+
+// 1つのタググループをリセット
+function resetTagGroup(fieldId){
+  const field = document.getElementById(fieldId);
+  if(!field) return;
+  field.value = '';
+  const group = field.nextElementSibling;
+  if(!group || !group.classList.contains('tagSelector')) return;
   group.querySelectorAll('.tagBtn').forEach(b=>{
     b.classList.remove('selected','bess','pv','wp','tokko','kouatsu','teiatu','jisha','daiko');
   });
-  // 選択
+}
+
+// 全タググループをリセット
+function resetAllTags(){
+  ['p_sourceType','p_voltage','p_dealType'].forEach(resetTagGroup);
+}
+
+// タグボタンのクリック処理
+function selectTag(fieldId, value, btn, colorClass){
   const field = document.getElementById(fieldId);
+  if(!field) return;
+  const group = btn.closest('.tagSelector');
+  // グループ内の全ボタンをリセット
+  group.querySelectorAll('.tagBtn').forEach(b=>{
+    b.classList.remove('selected','bess','pv','wp','tokko','kouatsu','teiatu','jisha','daiko');
+  });
+  // 同じ値を再クリック→解除
   if(field.value === value){
-    // 同じタグを再クリック→解除
     field.value = '';
   } else {
     field.value = value;
@@ -1586,19 +1596,29 @@ function selectTag(fieldId, value, btn, colorClass){
   }
 }
 
-function setTagFromValue(fieldId, value, colorMap){
+// 値からタグUIを復元（厳密一致）
+function restoreTagUI(fieldId, value){
   const field = document.getElementById(fieldId);
-  if(!field || !value) return;
+  if(!field) return;
+  // まずグループをリセット
+  resetTagGroup(fieldId);
+  if(!value) return;
+  // hidden inputに値をセット
   field.value = value;
+  // UIボタンを復元（厳密一致のみ）
   const group = field.nextElementSibling;
-  if(!group) return;
+  if(!group || !group.classList.contains('tagSelector')) return;
   group.querySelectorAll('.tagBtn').forEach(b=>{
-    const btnVal = b.getAttribute('onclick').match(/'([^']+)',this/)?.[1];
+    const m = b.getAttribute('onclick').match(/',this/)?b.getAttribute('onclick').match(/'([^']+)',this/):null;
+    const btnVal = m ? m[1] : null;
     if(btnVal === value){
-      b.classList.remove('selected','bess','pv','wp','tokko','kouatsu','teiatu','jisha','daiko');
-      b.classList.add('selected', colorMap[value]||'');
+      b.classList.add('selected', TAG_COLOR_MAP[value] || '');
     }
   });
+}
+
+function setTagFromValue(fieldId, value, colorMap){
+  restoreTagUI(fieldId, value);
 }
 
 // ========== 自社/申請代行フィルター ==========
