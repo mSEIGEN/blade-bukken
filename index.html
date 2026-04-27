@@ -266,6 +266,14 @@
     .detailGrid{grid-template-columns:1fr;}
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<style>
+  .drag-handle{cursor:grab;color:var(--text3);padding:0 6px;font-size:14px;user-select:none;flex-shrink:0;}
+  .drag-handle:active{cursor:grabbing;}
+  tr.sortable-ghost{opacity:0.4;background:#eff6ff;}
+  tr.sortable-chosen{background:#f8faff;}
+  tr.accordionRow td:first-child{display:flex;align-items:center;gap:4px;}
+</style>
 </head>
 <body>
 
@@ -339,7 +347,7 @@
           <thead><tr>
             <th class="sortable" onclick="sortLand('address')">所在地・地番 <span id="lsort_address"></span></th><th class="sortable" onclick="sortLand('area')">面積 <span id="lsort_area"></span></th><th>地目</th><th>地主・仲介</th><th class="sortable" onclick="sortLand('status')">ステータス <span id="lsort_status"></span></th><th>電力申請</th><th class="sortable" onclick="sortLand('visibleTo')">公開状況 <span id="lsort_visibleTo"></span></th><th>資料</th><th>操作</th>
           </tr></thead>
-          <tbody id="landBody"></tbody>
+          <tbody id="landBody" class="sortable-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -426,7 +434,7 @@
           <thead><tr>
             <th class="sortable" onclick="sortPower('name')">物件名 <span id="psort_name"></span></th><th class="sortable" onclick="sortPower('businessName')">事業者名 <span id="psort_businessName"></span></th><th class="sortable" onclick="sortPower('voltage')">電力会社 <span id="psort_voltage"></span></th><th>容量</th><th class="sortable" onclick="sortPower('ansdate')">回答日 <span id="psort_ansdate"></span></th><th class="sortable" onclick="sortPower('status')">ステータス <span id="psort_status"></span></th><th class="sortable" onclick="sortPower('visibleTo')">公開状況 <span id="psort_visibleTo"></span></th><th>資料</th><th>操作</th>
           </tr></thead>
-          <tbody id="powerBody"></tbody>
+          <tbody id="powerBody" class="sortable-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -930,8 +938,9 @@ function renderLand(){
     const linkedPowers=getLinkedPowers(l);
     const hasLinked=linkedPowers.length>0;
     const menuId=`lmenu_${l.id}`;
-    return `<tr class="accordionRow" style="cursor:pointer" onclick="toggleAccordion('lacc_${l.id}')">
-      <td style="color:var(--text2);font-size:12px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+    return `<tr class="accordionRow" data-id="${l.id}">
+      <td style="color:var(--text2);font-size:12px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onclick="toggleAccordion('lacc_${l.id}')">
+        <span class="drag-handle" onclick="event.stopPropagation()">☰</span>
         <strong style="color:var(--text)">${l.address||'―'}</strong>
         ${hasLinked?`<button class="expandBtn" id="lexpand_${l.id}">▼</button>`:''}
       </td>
@@ -1307,7 +1316,7 @@ function openShareModal(sheet,id,name,visibleTo){
   shareTarget={sheet,id,visibleTo:visibleTo||''};
   document.getElementById('shareModalName').textContent=`📋 ${name}`;
   const currentVisible=(visibleTo||'').split(',').map(s=>s.trim()).filter(Boolean);
-  const clients=clientIds||[];
+  const clients=(clientIds||[]).filter(c=>c&&c.toLowerCase()!=='blade');
   if(!clients.length){
     document.getElementById('shareList').innerHTML=`<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">登録されている取引先がありません</div>`;
   } else {
@@ -1331,7 +1340,8 @@ function toggleShare(clientId){
 }
 
 async function saveShare(){
-  const visible=clientIds.filter(c=>{
+  const filteredClients=(clientIds||[]).filter(c=>c&&c.toLowerCase()!=='blade');
+  const visible=filteredClients.filter(c=>{
     const btn=document.getElementById('toggle_'+CSS.escape(c));
     return btn&&btn.classList.contains('on');
   });
@@ -1787,7 +1797,60 @@ function checkAlerts(){
   });
 }
 // ========== 初期化 ==========
-window.onload=()=>{initCache();loadAll().then(()=>renderLand());};
+window.onload=()=>{
+  initCache();
+  loadAll().then(()=>{
+    renderLand();
+    initSortable();
+  });
+};
+
+let landSortable=null, powerSortable=null;
+
+function initSortable(){
+  const landTbody=document.getElementById('landBody');
+  const powerTbody=document.getElementById('powerBody');
+  if(landTbody && typeof Sortable !== 'undefined'){
+    landSortable=Sortable.create(landTbody,{
+      handle:'.drag-handle',
+      animation:150,
+      ghostClass:'sortable-ghost',
+      chosenClass:'sortable-chosen',
+      filter:'.accordionPanel',
+      onEnd: function(evt){
+        // アコーディオンパネルを正しい位置に移動
+        const rows=landTbody.querySelectorAll('tr.accordionRow');
+        rows.forEach(row=>{
+          const id=row.getAttribute('data-id');
+          const panel=document.getElementById('lacc_'+id);
+          if(panel) row.after(panel);
+        });
+        // landsの順番をDOMに合わせて更新
+        const newOrder=Array.from(landTbody.querySelectorAll('tr.accordionRow')).map(r=>r.getAttribute('data-id'));
+        lands.sort((a,b)=>newOrder.indexOf(String(a.id))-newOrder.indexOf(String(b.id)));
+      }
+    });
+  }
+  if(powerTbody && typeof Sortable !== 'undefined'){
+    powerSortable=Sortable.create(powerTbody,{
+      handle:'.drag-handle',
+      animation:150,
+      ghostClass:'sortable-ghost',
+      chosenClass:'sortable-chosen',
+      filter:'.accordionPanel',
+      onEnd: function(evt){
+        const rows=powerTbody.querySelectorAll('tr.accordionRow');
+        rows.forEach(row=>{
+          const id=row.getAttribute('data-id');
+          const panel=document.getElementById('pacc_'+id);
+          if(panel) row.after(panel);
+        });
+        const newOrder=Array.from(powerTbody.querySelectorAll('tr.accordionRow')).map(r=>r.getAttribute('data-id'));
+        powers.sort((a,b)=>newOrder.indexOf(String(a.id))-newOrder.indexOf(String(b.id)));
+      }
+    });
+  }
+}
 </script>
 </body>
 </html>
