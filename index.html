@@ -266,6 +266,12 @@
     .detailGrid{grid-template-columns:1fr;}
   }
 </style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<style>
+  tr.sortable-ghost{opacity:0.4;background:#eff6ff;}
+  tr.sortable-chosen{background:#f8faff;}
+  tr.accordionRow td:first-child{display:flex;align-items:center;gap:4px;}
+</style>
 </head>
 <body>
 
@@ -339,7 +345,7 @@
           <thead><tr>
             <th class="sortable" onclick="sortLand('address')">所在地・地番 <span id="lsort_address"></span></th><th class="sortable" onclick="sortLand('area')">面積 <span id="lsort_area"></span></th><th>地目</th><th>地主・仲介</th><th class="sortable" onclick="sortLand('status')">ステータス <span id="lsort_status"></span></th><th>電力申請</th><th class="sortable" onclick="sortLand('visibleTo')">公開状況 <span id="lsort_visibleTo"></span></th><th>資料</th><th>操作</th>
           </tr></thead>
-          <tbody id="landBody"></tbody>
+          <tbody id="landBody" class="sortable-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -426,7 +432,7 @@
           <thead><tr>
             <th class="sortable" onclick="sortPower('name')">物件名 <span id="psort_name"></span></th><th class="sortable" onclick="sortPower('businessName')">事業者名 <span id="psort_businessName"></span></th><th class="sortable" onclick="sortPower('voltage')">電力会社 <span id="psort_voltage"></span></th><th>容量</th><th class="sortable" onclick="sortPower('ansdate')">回答日 <span id="psort_ansdate"></span></th><th class="sortable" onclick="sortPower('status')">ステータス <span id="psort_status"></span></th><th class="sortable" onclick="sortPower('visibleTo')">公開状況 <span id="psort_visibleTo"></span></th><th>資料</th><th>操作</th>
           </tr></thead>
-          <tbody id="powerBody"></tbody>
+          <tbody id="powerBody" class="sortable-tbody"></tbody>
         </table>
       </div>
     </div>
@@ -855,10 +861,10 @@ function voltageShort(v){
 
 function sourceBadgeHtml(p){
   const icon=sourceIcon[p.sourceType]||'';
-  const src=p.sourceType?`<span class="badge ${sourceTypeMap[p.sourceType]||'badge-gray'}" style="font-size:10px">${icon} ${p.sourceType}</span>`:'';
-  const volt=p.voltage?`<span class="badge ${getVoltageClass(p.voltage)}" style="font-size:10px">${voltageShort(p.voltage)}</span>`:'';  
-  const deal=p.dealType?`<span class="badge ${p.dealType==='自社'?'badge-deal-jisha':'badge-deal-daiko'}" style="font-size:10px">${p.dealType==='自社'?'🏠':'🏢'} ${p.dealType}</span>`:'';
-  return `${src}${volt?'&nbsp;'+volt:''}${deal?'&nbsp;'+deal:''}`;
+  const src=p.sourceType?`<span class="badge ${sourceTypeMap[p.sourceType]||'badge-gray'}" style="font-size:10px;white-space:nowrap">${icon} ${p.sourceType}</span>`:'';
+  const volt=p.voltage?`<span class="badge ${getVoltageClass(p.voltage)}" style="font-size:10px;white-space:nowrap">${voltageShort(p.voltage)}</span>`:'';
+  const deal=p.dealType?`<span class="badge ${p.dealType==='自社'?'badge-deal-jisha':'badge-deal-daiko'}" style="font-size:10px;white-space:nowrap">${p.dealType==='自社'?'🏠':'🏢'} ${p.dealType}</span>`:'';
+  return [src,volt,deal].filter(Boolean).join('&nbsp;');
 }
 
 function fmtCapacity(p){
@@ -930,8 +936,8 @@ function renderLand(){
     const linkedPowers=getLinkedPowers(l);
     const hasLinked=linkedPowers.length>0;
     const menuId=`lmenu_${l.id}`;
-    return `<tr class="accordionRow" style="cursor:pointer" onclick="toggleAccordion('lacc_${l.id}')">
-      <td style="color:var(--text2);font-size:12px;max-width:200px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">
+    return `<tr class="accordionRow" data-id="${l.id}">
+      <td style="color:var(--text2);font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis" onclick="toggleAccordion('lacc_${l.id}')">
         <strong style="color:var(--text)">${l.address||'―'}</strong>
         ${hasLinked?`<button class="expandBtn" id="lexpand_${l.id}">▼</button>`:''}
       </td>
@@ -1107,11 +1113,11 @@ function renderPower(){
     const menuId=`pmenu_${p.id}`;
     return `<tr class="accordionRow" style="${isAlert?'background:#fffbeb;':''}cursor:pointer" onclick="toggleAccordion('pacc_${p.id}')">
       <td>
-        <div style="display:flex;flex-wrap:wrap;gap:3px;margin-bottom:3px">${sourceBadgeHtml(p)}</div>
+        <div style="display:flex;flex-wrap:nowrap;gap:3px;margin-bottom:3px">${sourceBadgeHtml(p)}</div>
         <strong style="white-space:nowrap">${p.name||'―'}</strong>
+        ${hasLinked?`<button class="expandBtn" id="pexpand_${p.id}">▼</button>`:''}
         ${p.receiptNumber?`<br><span style="font-size:11px;color:var(--text3)">🔢 ${p.receiptNumber}</span>`:''}
         ${isAlert?`<span class="badge badge-yellow" style="font-size:10px;margin-left:4px;">⚠️ 回答期限間近</span>`:''}
-        ${hasLinked?`<button class="expandBtn" id="pexpand_${p.id}">▼</button>`:''}
       </td>
       <td style="font-size:12px;color:var(--text2);white-space:nowrap">${p.businessName||'―'}</td>
       <td style="color:var(--text2);font-size:12px">${p.company||'―'}</td>
@@ -1181,7 +1187,7 @@ function openPowerDetail(id){
       <div class="detailItem"><div class="dlabel">座標</div><div class="dvalue">${p.coordinates||'―'}</div></div>
       <div class="detailItem"><div class="dlabel">受付番号</div><div class="dvalue">${p.receiptNumber||'―'}</div></div>
       <div class="detailItem"><div class="dlabel">供給番号</div><div class="dvalue">${p.supplyNumber||'―'}</div></div>
-      <div class="detailItem"><div class="dlabel">公開状況</div><div class="dvalue">${visibleToHtml(p.visibleTo,true)||'非公開'}</div></div>
+      ${currentRole==='admin'?`<div class="detailItem"><div class="dlabel">公開状況</div><div class="dvalue">${visibleToHtml(p.visibleTo,true)||'非公開'}</div></div>`:''}
       <div class="detailItem full"><div class="dlabel">発電場所住所</div><div class="dvalue">${p.siteAddress||'―'}</div></div>
       <div class="detailItem full"><div class="dlabel">備考</div><div class="dvalue">${p.note||'―'}</div></div>
     </div>
@@ -1192,10 +1198,22 @@ function openPowerDetail(id){
 function openPowerModal(id=null){
   editPowerId=id;
   document.getElementById('powerModalTitle').textContent=id?'⚡ 申請を編集':'⚡ 電力申請を追加';
-  const fields=['name','businessName','company','type','ansdate','cost','guaranteeAmount','guaranteeStatus','status','coordinates','dropbox','note','kw','kwh','kw_discharge','kw_charge','receiptNumber','supplyNumber','siteAddress','dealType'];
+
+  // ★ステップ1: 全タグを必ずリセット（UIとhidden両方）
+  clearAllTags();
+
+  // ★ステップ2: 全フォームをクリア
+  const textFields=['name','businessName','company','type','ansdate','cost','guaranteeAmount','guaranteeStatus','status','coordinates','dropbox','note','kw','kwh','kw_discharge','kw_charge','receiptNumber','supplyNumber','siteAddress'];
+  textFields.forEach(f=>{const el=document.getElementById('p_'+f);if(el)el.value='';});
+  document.getElementById('pvwpFields').style.display='none';
+  document.getElementById('bessFields').style.display='none';
+
   if(id){
     const p=powers.find(x=>x.id==id);
-    fields.forEach(f=>{
+    if(!p) return;
+
+    // ★ステップ3: テキスト・select系フィールドを復元
+    textFields.forEach(f=>{
       const el=document.getElementById('p_'+f);
       if(!el) return;
       if(f==='ansdate'){
@@ -1205,7 +1223,6 @@ function openPowerModal(id=null){
           const d=new Date(v);
           el.value=d.toISOString().split('T')[0];
         } else if(/^\d+$/.test(v)){
-          // スプレッドシートのシリアル値
           const d=new Date((parseInt(v)-25569)*86400000);
           el.value=`${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
         } else{el.value=v;}
@@ -1213,30 +1230,18 @@ function openPowerModal(id=null){
         el.value=String(p[f]||'').replace(/,/g,'');
       } else{el.value=p[f]||'';}
     });
-    // BESS用kwhを別途セット
+
+    // BESS用kwh
     const bessKwh=document.getElementById('p_kwh_bess');
     if(bessKwh) bessKwh.value=String(p['kwh']||'').replace(/,/g,'');
-    // タグボタン復元
-    const srcColorMap={'PV':'pv','BESS':'bess','WP':'wp'};
-    const voltColorMap={'特別高圧 66kV':'tokko','高圧 6.6kV':'kouatsu','低圧':'teiatu'};
-    const dealColorMap={'自社':'jisha','申請代行':'daiko'};
-    ['p_sourceType','p_voltage','p_dealType'].forEach(fid=>{
-      const field=document.getElementById(fid);
-      if(!field||!field.value) return;
-      const colorMap=fid==='p_sourceType'?srcColorMap:fid==='p_voltage'?voltColorMap:dealColorMap;
-      const group=field.nextElementSibling;
-      if(!group||!group.classList.contains('tagSelector')) return;
-      group.querySelectorAll('.tagBtn').forEach(b=>{
-        b.classList.remove('selected','bess','pv','wp','tokko','kouatsu','teiatu','jisha','daiko');
-        const m=b.getAttribute('onclick').match(/'([^']+)',this/);
-        if(m&&m[1]===field.value) b.classList.add('selected',colorMap[field.value]||'');
-      });
-    });
+
+    // ★ステップ4: タグUIを値ベースで復元（リセット済みの状態から）
+    applyTagUI('p_sourceType', p.sourceType||'');
+    applyTagUI('p_voltage', p.voltage||'');
+    applyTagUI('p_dealType', p.dealType||'');
+
+    // ★ステップ5: 容量フィールド表示切替
     onSourceTypeChange();
-  } else {
-    fields.forEach(f=>{const el=document.getElementById('p_'+f);if(el)el.value='';});
-    document.getElementById('pvwpFields').style.display='none';
-    document.getElementById('bessFields').style.display='none';
   }
   document.getElementById('calcHint').textContent='';
   // 土地紐付けの初期化
@@ -1308,7 +1313,7 @@ function openShareModal(sheet,id,name,visibleTo){
   shareTarget={sheet,id,visibleTo:visibleTo||''};
   document.getElementById('shareModalName').textContent=`📋 ${name}`;
   const currentVisible=(visibleTo||'').split(',').map(s=>s.trim()).filter(Boolean);
-  const clients=clientIds||[];
+  const clients=(clientIds||[]).filter(c=>c&&c.toLowerCase()!=='blade');
   if(!clients.length){
     document.getElementById('shareList').innerHTML=`<div style="color:var(--text3);font-size:13px;text-align:center;padding:20px">登録されている取引先がありません</div>`;
   } else {
@@ -1332,7 +1337,8 @@ function toggleShare(clientId){
 }
 
 async function saveShare(){
-  const visible=clientIds.filter(c=>{
+  const filteredClients=(clientIds||[]).filter(c=>c&&c.toLowerCase()!=='blade');
+  const visible=filteredClients.filter(c=>{
     const btn=document.getElementById('toggle_'+CSS.escape(c));
     return btn&&btn.classList.contains('on');
   });
@@ -1554,36 +1560,79 @@ function clearPowerFilter(){
 }
 
 // ========== タグ選択 ==========
+// タグvalue→colorクラスのマップ
+const TAG_COLORS = {
+  'PV':'pv','BESS':'bess','WP':'wp',
+  '特別高圧 66kV':'tokko','高圧 6.6kV':'kouatsu','低圧':'teiatu',
+  '自社':'jisha','申請代行':'daiko'
+};
+
+// ボタンのonclick属性から値を取得
+function getTagBtnValue(btn){
+  const m = btn.getAttribute('onclick').match(/',this/);
+  if(!m) return null;
+  const full = btn.getAttribute('onclick');
+  const match = full.match(/selectTag\('[^']+','([^']+)',this/);
+  return match ? match[1] : null;
+}
+
+// 1グループのタグUIとhiddenをリセット
+function clearTagGroup(fieldId){
+  const field = document.getElementById(fieldId);
+  if(field) field.value = '';
+  const group = field ? field.nextElementSibling : null;
+  if(group && group.classList.contains('tagSelector')){
+    group.querySelectorAll('.tagBtn').forEach(b=>{
+      b.classList.remove('selected','bess','pv','wp','tokko','kouatsu','teiatu','jisha','daiko');
+    });
+  }
+}
+
+// 全タググループをリセット
+function clearAllTags(){
+  ['p_voltage','p_sourceType','p_dealType'].forEach(clearTagGroup);
+}
+
+// hiddenの値からUIを復元（完全一致のみ）
+function applyTagUI(fieldId, value){
+  // ① まずグループをクリア
+  clearTagGroup(fieldId);
+  if(!value) return;
+  // ② hiddenに値をセット
+  const field = document.getElementById(fieldId);
+  if(!field) return;
+  field.value = value;
+  // ③ 完全一致するボタンにのみselectedを付与
+  const group = field.nextElementSibling;
+  if(!group || !group.classList.contains('tagSelector')) return;
+  group.querySelectorAll('.tagBtn').forEach(b=>{
+    const btnVal = getTagBtnValue(b);
+    if(btnVal === value){
+      b.classList.add('selected', TAG_COLORS[value] || '');
+    }
+  });
+}
+
+// ボタンクリック時の処理
 function selectTag(fieldId, value, btn, colorClass){
-  // 同じグループのボタンを全部解除
+  // ① グループ内の全ボタンのselectedを削除
   const group = btn.closest('.tagSelector');
   group.querySelectorAll('.tagBtn').forEach(b=>{
     b.classList.remove('selected','bess','pv','wp','tokko','kouatsu','teiatu','jisha','daiko');
   });
-  // 選択
+  // ② hidden更新とUI付与
   const field = document.getElementById(fieldId);
+  if(!field) return;
   if(field.value === value){
-    // 同じタグを再クリック→解除
-    field.value = '';
+    field.value = ''; // 同じ値を再クリック→解除
   } else {
     field.value = value;
     btn.classList.add('selected', colorClass);
   }
 }
 
-function setTagFromValue(fieldId, value, colorMap){
-  const field = document.getElementById(fieldId);
-  if(!field || !value) return;
-  field.value = value;
-  const group = field.nextElementSibling;
-  if(!group) return;
-  group.querySelectorAll('.tagBtn').forEach(b=>{
-    const btnVal = b.getAttribute('onclick').match(/'([^']+)',this/)?.[1];
-    if(btnVal === value){
-      b.classList.remove('selected','bess','pv','wp','tokko','kouatsu','teiatu','jisha','daiko');
-      b.classList.add('selected', colorMap[value]||'');
-    }
-  });
+function setTagFromValue(fieldId, value){
+  applyTagUI(fieldId, value);
 }
 
 // ========== 自社/申請代行フィルター ==========
@@ -1745,7 +1794,60 @@ function checkAlerts(){
   });
 }
 // ========== 初期化 ==========
-window.onload=()=>{initCache();loadAll().then(()=>renderLand());};
+window.onload=()=>{
+  initCache();
+  loadAll().then(()=>{
+    renderLand();
+    initSortable();
+  });
+};
+
+let landSortable=null, powerSortable=null;
+
+function initSortable(){
+  const landTbody=document.getElementById('landBody');
+  const powerTbody=document.getElementById('powerBody');
+  if(landTbody && typeof Sortable !== 'undefined'){
+    landSortable=Sortable.create(landTbody,{
+      handle:'.drag-handle',
+      animation:150,
+      ghostClass:'sortable-ghost',
+      chosenClass:'sortable-chosen',
+      filter:'.accordionPanel',
+      onEnd: function(evt){
+        // アコーディオンパネルを正しい位置に移動
+        const rows=landTbody.querySelectorAll('tr.accordionRow');
+        rows.forEach(row=>{
+          const id=row.getAttribute('data-id');
+          const panel=document.getElementById('lacc_'+id);
+          if(panel) row.after(panel);
+        });
+        // landsの順番をDOMに合わせて更新
+        const newOrder=Array.from(landTbody.querySelectorAll('tr.accordionRow')).map(r=>r.getAttribute('data-id'));
+        lands.sort((a,b)=>newOrder.indexOf(String(a.id))-newOrder.indexOf(String(b.id)));
+      }
+    });
+  }
+  if(powerTbody && typeof Sortable !== 'undefined'){
+    powerSortable=Sortable.create(powerTbody,{
+      handle:'.drag-handle',
+      animation:150,
+      ghostClass:'sortable-ghost',
+      chosenClass:'sortable-chosen',
+      filter:'.accordionPanel',
+      onEnd: function(evt){
+        const rows=powerTbody.querySelectorAll('tr.accordionRow');
+        rows.forEach(row=>{
+          const id=row.getAttribute('data-id');
+          const panel=document.getElementById('pacc_'+id);
+          if(panel) row.after(panel);
+        });
+        const newOrder=Array.from(powerTbody.querySelectorAll('tr.accordionRow')).map(r=>r.getAttribute('data-id'));
+        powers.sort((a,b)=>newOrder.indexOf(String(a.id))-newOrder.indexOf(String(b.id)));
+      }
+    });
+  }
+}
 </script>
 </body>
 </html>
