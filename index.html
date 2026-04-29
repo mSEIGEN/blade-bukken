@@ -1033,7 +1033,7 @@ async function saveLand(){
   const address=document.getElementById('l_address').value.trim();
   const name=nameEl?nameEl.value.trim():address;
   if(!address){alert('所在地・地番を入力してください');return;}
-  const existingLand = editLandId ? lands.find(x=>x.id==editLandId) : null;
+  const existingLand = editLandId ? lands.find(x=>String(x.id)===String(editLandId)) : null;
   const obj={id:editLandId||'',name:name||address,
     address:document.getElementById('l_address').value,
     area:document.getElementById('l_area').value.replace(/[^0-9.]/g,''),
@@ -1048,6 +1048,10 @@ async function saveLand(){
     visibleTo:existingLand?.visibleTo||'',
     clientId:existingLand?.clientId||'BLADE',
   };
+  console.log('editLandId:', editLandId);
+  console.log('existingLand:', existingLand);
+  console.log('obj.visibleTo:', obj.visibleTo);
+  console.log('obj:', obj);
   showLoading('保存中...');
   try{await gasRequest({action:'saveLand',data:JSON.stringify(obj)});await loadAll();}
   catch(e){alert('保存に失敗しました');}
@@ -1274,7 +1278,7 @@ async function savePower(){
   if(!name){alert('物件名を入力してください');return;}
   const src=document.getElementById('p_sourceType').value;
   const guaranteeRaw=document.getElementById('p_guaranteeAmount').value.replace(/[^0-9]/g,'');
-  const existing=editPowerId?powers.find(x=>x.id==editPowerId):null;
+  const existing=editPowerId?powers.find(x=>String(x.id)===String(editPowerId)):null;
   const obj={id:editPowerId||'',name,
     businessName:document.getElementById('p_businessName').value,
     company:document.getElementById('p_company').value,
@@ -1302,6 +1306,10 @@ async function savePower(){
     clientId:existing?.clientId||'BLADE',
     visibleTo:existing?.visibleTo||'',
   };
+  console.log('editPowerId:', editPowerId);
+  console.log('existing:', existing);
+  console.log('obj.visibleTo:', obj.visibleTo);
+  console.log('obj:', obj);
   showLoading('保存中...');
   try{await gasRequest({action:'savePower',data:JSON.stringify(obj)});await loadAll();}
   catch(e){alert('保存に失敗しました');}
