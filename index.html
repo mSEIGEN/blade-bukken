@@ -1274,6 +1274,7 @@ async function savePower(){
   if(!name){alert('物件名を入力してください');return;}
   const src=document.getElementById('p_sourceType').value;
   const guaranteeRaw=document.getElementById('p_guaranteeAmount').value.replace(/[^0-9]/g,'');
+  const existing=editPowerId?powers.find(x=>x.id==editPowerId):null;
   const obj={id:editPowerId||'',name,
     businessName:document.getElementById('p_businessName').value,
     company:document.getElementById('p_company').value,
@@ -1298,7 +1299,8 @@ async function savePower(){
     receiptNumber:document.getElementById('p_receiptNumber')?document.getElementById('p_receiptNumber').value:'',
     supplyNumber:document.getElementById('p_supplyNumber')?document.getElementById('p_supplyNumber').value:'',
     siteAddress:document.getElementById('p_siteAddress')?document.getElementById('p_siteAddress').value:'',
-    clientId:'BLADE',
+    clientId:existing?.clientId||'BLADE',
+    visibleTo:existing?.visibleTo||'',
   };
   showLoading('保存中...');
   try{await gasRequest({action:'savePower',data:JSON.stringify(obj)});await loadAll();}
