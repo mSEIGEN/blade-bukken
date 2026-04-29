@@ -1033,9 +1033,10 @@ async function saveLand(){
   const address=document.getElementById('l_address').value.trim();
   const name=nameEl?nameEl.value.trim():address;
   if(!address){alert('所在地・地番を入力してください');return;}
+  const existingLand = editLandId ? lands.find(x=>x.id==editLandId) : null;
   const obj={id:editLandId||'',name:name||address,
     address:document.getElementById('l_address').value,
-    area:document.getElementById('l_area').value.replace(/[^0-9.]/g,''),  // カンマ・㎡を除去
+    area:document.getElementById('l_area').value.replace(/[^0-9.]/g,''),
     owner:document.getElementById('l_owner').value,
     status:document.getElementById('l_status').value,
     person:document.getElementById('l_person').value,
@@ -1044,7 +1045,8 @@ async function saveLand(){
     coordinates:document.getElementById('l_coordinates').value,
     landCategory:document.getElementById('l_landCategory')?document.getElementById('l_landCategory').value:'',
     powerLink:selectedPowerIds.join(','),
-    clientId:'BLADE',
+    visibleTo:existingLand?.visibleTo||'',
+    clientId:existingLand?.clientId||'BLADE',
   };
   showLoading('保存中...');
   try{await gasRequest({action:'saveLand',data:JSON.stringify(obj)});await loadAll();}
