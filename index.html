@@ -455,9 +455,67 @@
     <div class="sectionDivider">基本情報</div>
     <div class="formRow">
       <div class="formGroup2"><label>物件名 *</label><input type="text" id="l_name" placeholder="例：○○市△△案件"></div>
-      <div class="formGroup2"><label>ステータス</label><select id="l_status"><option>交渉中</option><option>契約済み</option><option>取得済み</option><option>見送り</option></select></div>
+      <div class="formGroup2"><label>ステータス</label><select id="l_status"><option>意思未確認</option><option>合意済</option><option>交渉中</option><option>契約済み</option><option>取得済み</option><option>見送り</option></select></div>
     </div>
-    <div class="formRow full"><div class="formGroup2"><label>所在地・地番</label><input type="text" id="l_address" placeholder="例：東京都○○市△△1-2-3"></div></div>
+    <div class="formRow full">
+      <div class="formGroup2">
+        <label>所在地・地番</label>
+        <div style="display:flex;gap:6px;align-items:stretch">
+          <select id="l_pref" style="width:130px;padding:10px 8px;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:inherit;outline:none;flex-shrink:0;">
+            <option value="">都道府県</option>
+          <option>北海道</option>
+          <option>青森県</option>
+          <option>岩手県</option>
+          <option>宮城県</option>
+          <option>秋田県</option>
+          <option>山形県</option>
+          <option>福島県</option>
+          <option>茨城県</option>
+          <option>栃木県</option>
+          <option>群馬県</option>
+          <option>埼玉県</option>
+          <option>千葉県</option>
+          <option>東京都</option>
+          <option>神奈川県</option>
+          <option>新潟県</option>
+          <option>富山県</option>
+          <option>石川県</option>
+          <option>福井県</option>
+          <option>山梨県</option>
+          <option>長野県</option>
+          <option>岐阜県</option>
+          <option>静岡県</option>
+          <option>愛知県</option>
+          <option>三重県</option>
+          <option>滋賀県</option>
+          <option>京都府</option>
+          <option>大阪府</option>
+          <option>兵庫県</option>
+          <option>奈良県</option>
+          <option>和歌山県</option>
+          <option>鳥取県</option>
+          <option>島根県</option>
+          <option>岡山県</option>
+          <option>広島県</option>
+          <option>山口県</option>
+          <option>徳島県</option>
+          <option>香川県</option>
+          <option>愛媛県</option>
+          <option>高知県</option>
+          <option>福岡県</option>
+          <option>佐賀県</option>
+          <option>長崎県</option>
+          <option>熊本県</option>
+          <option>大分県</option>
+          <option>宮崎県</option>
+          <option>鹿児島県</option>
+          <option>沖縄県</option>
+          </select>
+          <input type="text" id="l_address_detail" placeholder="○○市△△1-2-3" style="flex:1;padding:10px 12px;background:var(--surface2);border:1.5px solid var(--border);border-radius:9px;color:var(--text);font-size:13px;font-family:inherit;outline:none;">
+        </div>
+        <input type="hidden" id="l_address">
+      </div>
+    </div>
     <div class="formRow">
       <div class="formGroup2"><label>面積 (㎡)</label><input type="text" id="l_area" placeholder="例：5,000" onblur="fmtAreaInput(this)" onfocus="unFmtAreaInput(this)"></div>
       <div class="formGroup2"><label>地目</label><select id="l_landCategory"><option value="">選択してください</option><option>田</option><option>畑</option><option>宅地</option><option>山林</option><option>原野</option><option>雑種地</option><option>その他</option></select></div>
@@ -766,7 +824,7 @@ function switchTab(name,el){
   if(name==='power') renderPower();
 }
 
-const landStatusMap={'交渉中':'badge-blue','契約済み':'badge-green','取得済み':'badge-purple','見送り':'badge-gray'};
+const landStatusMap={'意思未確認':'badge-gray','合意済':'badge-teal','交渉中':'badge-blue','契約済み':'badge-green','取得済み':'badge-purple','見送り':'badge-gray'};
 const powerStatusMap={'検討中':'badge-gray','作成中':'badge-gray','申込進行中':'badge-blue','検討料支払い待ち':'badge-yellow','受付':'badge-blue','回答済':'badge-green','契約済':'badge-purple','停止中':'badge-orange','不採択':'badge-red'};
 const sourceTypeMap={'PV':'badge-yellow','BESS':'badge-blue','WP':'badge-teal'};
 
@@ -1009,8 +1067,21 @@ function openLandDetail(id){
 function openLandModal(id=null){
   editLandId=id;
   document.getElementById('landModalTitle').textContent=id?'🌍 土地を編集':'🌍 土地を追加';
-  const fields=['name','address','area','owner','status','person','dropbox','note','coordinates','landCategory','powerLink'];
-  if(id){const l=lands.find(x=>x.id==id);fields.forEach(f=>{const el=document.getElementById('l_'+f);if(el)el.value=l[f]||'';});}
+  const fields=['name','area','owner','status','person','dropbox','note','coordinates','landCategory','powerLink'];
+  if(id){
+    const l=lands.find(x=>x.id==id);
+    fields.forEach(f=>{const el=document.getElementById('l_'+f);if(el)el.value=l[f]||'';});
+    // 所在地を都道府県と残りに分割
+    const PREFS_LIST=['北海道','青森県','岩手県','宮城県','秋田県','山形県','福島県','茨城県','栃木県','群馬県','埼玉県','千葉県','東京都','神奈川県','新潟県','富山県','石川県','福井県','山梨県','長野県','岐阜県','静岡県','愛知県','三重県','滋賀県','京都府','大阪府','兵庫県','奈良県','和歌山県','鳥取県','島根県','岡山県','広島県','山口県','徳島県','香川県','愛媛県','高知県','福岡県','佐賀県','長崎県','熊本県','大分県','宮崎県','鹿児島県','沖縄県'];
+    const addr=l.address||'';
+    const foundPref=PREFS_LIST.find(p=>addr.startsWith(p))||'';
+    const prefSel=document.getElementById('l_pref');
+    const detailInp=document.getElementById('l_address_detail');
+    if(prefSel) prefSel.value=foundPref;
+    if(detailInp) detailInp.value=foundPref?addr.slice(foundPref.length):addr;
+    const addrHidden=document.getElementById('l_address');
+    if(addrHidden) addrHidden.value=addr;
+  }
   else{fields.forEach(f=>{const el=document.getElementById('l_'+f);if(el)el.value='';});}
   // 電力申請紐付けの初期化
   if(id){
@@ -1030,7 +1101,11 @@ function openLandModal(id=null){
 
 async function saveLand(){
   const nameEl=document.getElementById('l_name');
-  const address=document.getElementById('l_address').value.trim();
+  const pref=document.getElementById('l_pref')?document.getElementById('l_pref').value:'';
+  const addrDetail=document.getElementById('l_address_detail')?document.getElementById('l_address_detail').value.trim():document.getElementById('l_address').value.trim();
+  const address=(pref+addrDetail).trim();
+  // hiddenフィールドに結合値をセット
+  const addrHidden=document.getElementById('l_address');if(addrHidden)addrHidden.value=address;
   const name=nameEl?nameEl.value.trim():address;
   if(!address){alert('所在地・地番を入力してください');return;}
   const existingLand = editLandId ? lands.find(x=>String(x.id)===String(editLandId)) : null;
